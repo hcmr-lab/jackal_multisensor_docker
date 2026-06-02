@@ -1,0 +1,71 @@
+services:
+  multisensor:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        USERNAME: ${USER_NAME:-ros2user}
+        USER_UID: ${USER_UID:-1000}
+        USER_GID: ${USER_GID:-1000}
+    image: multisensor-humble:latest
+    container_name: ${CONTAINER_NAME:-multisensor_container}
+
+    # Host networking + IPC are needed for ROS 2 DDS discovery to "just work"
+    # across containers and the host.
+    network_mode: host
+    ipc: host
+
+    # Privileged is the pragmatic choice for mixed USB hardware (RealSense,
+    # Ximea, FLIR Boson). Can be tightened later with `devices:` + `cap_add:`
+    # if security policy requires.
+    privileged: true
+
+    stdin_open: true
+    tty: true
+
+    user: "${USER_UID:-1000}:${USER_GID:-1000}"
+    working_dir: /home/${USER_NAME:-ros2user}/ros2_ws
+
+    # plugdev: RealSense / Ximea USB rules.  video: FLIR Boson V4L2.
+    group_add:
+      - plugdev
+      - video
+      - dialout
+
+    environment:
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
+      - RMW_IMPLEMENTATION=${RMW_IMPLEMENTATION:-rmw_cyclonedds_cpp}
+      - CYCLONEDDS_URI=${CYCLONEDDS_URI:-}
+      - DISPLAY=${DISPLAY:-}
+      - QT_X11_NO_MITSHM=1
+      # Used by some sensor SDKs (Ximea) to locate config under HOME
+      - HOME=/home/${USER_NAME:-ros2user}
+
+    volumes:
+      # ---- Hardware ----
+      # /dev/bus/usb covers RealSense and Ximea; /dev needs to be available
+      # for FLIR Boson's /dev/video* and any future V4L2 cameras.
+      - /dev:/dev
+
+      # ---- mDNS for Ouster .local hostnames (optional) ----
+      - /var/run/avahi-daemon/socket:/var/run/avahi-daemon/socket
+
+      # ---- Source code (live, edit on host) ----
+      - ./sensor_ws/src:/home/${USER_NAME:-ros2user}/ros2_ws/src
+
+      # ---- Build artifact caches ----
+      - ./sensor_ws/build:/home/${USER_NAME:-ros2user}/ros2_ws/build
+      - ./sensor_ws/install:/home/${USER_NAME:-ros2user}/ros2_ws/install
+      - ./sensor_ws/log:/home/${USER_NAME:-ros2user}/ros2_ws/log
+
+      # ---- Configs, calibrations, data ----
+      - ./config:/home/${USER_NAME:-ros2user}/config:ro
+      - ./calibrations:/home/${USER_NAME:-ros2user}/calibrations
+      - ./bags:/home/${USER_NAME:-ros2user}/bags
+      - ./maps:/home/${USER_NAME:-ros2user}/maps
+
+      # ---- Time sync + GUI ----
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${XAUTHORITY:-${HOME}/.Xauthority}:/home/${USER_NAME:-ros2user}/.Xauthority:rw

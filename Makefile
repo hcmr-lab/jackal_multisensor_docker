@@ -1,0 +1,44 @@
+# Multisensor docker — common operations.
+# Run `make help` for the list.
+
+SHELL := /bin/bash
+COMPOSE := $(shell docker ps > /dev/null 2>&1 && echo "docker compose" || echo "sudo docker compose")
+
+.DEFAULT_GOAL := help
+
+.PHONY: help setup up down shell build rebuild logs clean nuke status
+
+help: ## Show this help
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+
+setup: ## First-time setup (generates .env, imports src, builds image, builds workspace)
+	@./scripts/setup.sh
+
+up: ## Start the container in the background
+	@$(COMPOSE) up -d
+
+down: ## Stop and remove the container
+	@$(COMPOSE) down
+
+shell: ## Open a shell inside the running container
+	@./scripts/shell.sh
+
+build: ## Rebuild the Docker image (does NOT touch the colcon workspace)
+	@$(COMPOSE) build
+
+rebuild: ## Run `colcon build --symlink-install` inside the container
+	@$(COMPOSE) exec multisensor bash -lc "colcon build --symlink-install"
+
+logs: ## Tail container logs
+	@$(COMPOSE) logs -f
+
+status: ## Show container status
+	@$(COMPOSE) ps
+
+clean: ## Remove the colcon build/install/log caches (keeps the image)
+	@$(COMPOSE) exec multisensor bash -lc "rm -rf build install log" || true
+	@echo "Workspace caches cleared. Run 'make rebuild' to recompile."
+
+nuke: ## Full reset: down + remove volumes (KEEPS your src/, .env, bags, maps)
+	@$(COMPOSE) down -v
+	@echo "Container and named volumes removed. src/, bags/, maps/ untouched."

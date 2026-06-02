@@ -1,0 +1,24 @@
+# Sensor wrappers pulled into src/ by `vcs import`.
+# Run via `./scripts/setup.sh` — you should not need to run vcs by hand.
+#
+# Pin to tags/commits in production; branch refs are convenient during
+# bring-up but make builds non-reproducible.
+repositories:
+  realsense-ros:
+    type: git
+    url: https://github.com/realsenseai/realsense-ros.git
+    version: ros2-master
+  ximea_ros2_cam:
+    type: git
+    url: https://github.com/hcmr-lab/ximea_ros2_cam.git
+    version: main
+  flir_boson_usb:
+    type: git
+    url: https://github.com/hcmr-lab/flir_boson_usb2.git
+    version: main
+
+# ---------- Add your other sensor wrappers below ----------
+#  package_name:
+#    type: git
+#    url: <link to git>
+#    version: main

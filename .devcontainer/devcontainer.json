@@ -1,0 +1,29 @@
+{
+  "name": "Multisensor ROS 2 (Humble)",
+  "dockerComposeFile": ["../docker-compose.yml"],
+  "service": "multisensor",
+  "workspaceFolder": "/home/${localEnv:USER}/ros2_ws",
+  "remoteUser": "${localEnv:USER}",
+  "shutdownAction": "none",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-iot.vscode-ros",
+        "ms-python.python",
+        "ms-vscode.cpptools",
+        "ms-vscode.cmake-tools",
+        "llvm-vs-code-extensions.vscode-clangd",
+        "redhat.vscode-xml",
+        "redhat.vscode-yaml"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "C_Cpp.intelliSenseEngine": "disabled",
+        "files.associations": {
+          "*.repos": "yaml",
+          "*.rviz":  "yaml"
+        }
+      }
+    }
+  }
+}

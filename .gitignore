@@ -1,0 +1,30 @@
+# Personal environment — generated per-user by scripts/setup.sh
+.env
+
+# Workspace build artifacts (mirrored by the named volumes)
+sensor_ws/build/
+sensor_ws/install/
+sensor_ws/log/
+
+# Data directories (often huge, sometimes private)
+bags/
+maps/
+
+# Optional: keep calibrations OR commit them, depending on lab policy.
+calibrations/
+
+# vcs-imported sensor wrappers — pulled in by setup.sh from sensors.repos
+sensor_ws/src/realsense-ros/
+sensor_ws/src/ximea*/
+sensor_ws/src/flir*/
+
+# Editor / OS
+.vscode/
+!.devcontainer/
+.idea/
+*.swp
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
