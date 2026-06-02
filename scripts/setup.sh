@@ -11,13 +11,18 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 PROJECT_ROOT="$( dirname "${SCRIPT_DIR}" )"
 cd "${PROJECT_ROOT}"
 
+# Set up X11 BEFORE the sudo decision below — XAUTH must be in the env
+# we pass through to sudo so docker compose can expand it correctly.
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/_x11_setup.sh"
+
 # ---- Docker permission detection ------------------------------------------
 if docker ps > /dev/null 2>&1; then
     DOCKER="docker"
     COMPOSE="docker compose"
 elif sudo -n docker ps > /dev/null 2>&1; then
-    DOCKER="sudo docker"
-    COMPOSE="sudo docker compose"
+    DOCKER="sudo --preserve-env=XAUTH,HOME,DISPLAY docker"
+    COMPOSE="sudo --preserve-env=XAUTH,HOME,DISPLAY docker compose"
     echo "-> Using sudo for Docker (consider: sudo usermod -aG docker $USER && relogin)"
 else
     echo "ERROR: docker not runnable as you or via passwordless sudo."
@@ -38,6 +43,9 @@ if [ ! -f ".env" ]; then
 USER_NAME=${USER}
 USER_UID=$(id -u)
 USER_GID=$(id -g)
+PLUGDEV_GID=$(getent group plugdev 2>/dev/null | cut -d: -f3 || echo "46")
+VIDEO_GID=$(getent group video 2>/dev/null | cut -d: -f3 || echo "44")
+DIALOUT_GID=$(getent group dialout 2>/dev/null | cut -d: -f3 || echo "20")
 
 CONTAINER_NAME=multisensor_container
 
@@ -60,6 +68,15 @@ set +a
 # ---- [2/5] Ensure directory structure (config might not exist on fresh clone) -
 echo "-> [2/5] Ensuring config and sensor_ws directories exists..."
 mkdir -p config sensor_ws/src sensor_ws/build sensor_ws/install sensor_ws/log
+
+# Pre-create the fallback cookie file so bare `docker compose up` doesn't
+# trip on a missing bind mount source (Docker would create it as a directory).
+touch /tmp/.docker-xauth-default
+chmod 0644 /tmp/.docker-xauth-default
+
+# Also pre-create the per-user one (the X11 helper will overwrite this).
+touch "/tmp/.docker-xauth-$(id -u)"
+chmod 0644 "/tmp/.docker-xauth-$(id -u)"
 
 # ---- [3/5] vcs import of sensor wrappers -----------------------------------
 if [ -f "sensors.repos" ] && [ ! -d "sensor_ws/src/realsense-ros" ]; then

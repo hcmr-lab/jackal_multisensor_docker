@@ -111,7 +111,7 @@ RUN cd /tmp && \
 # Removing 'ubuntu' frees UID 1000 — common on the osrf base image.
 RUN if getent passwd ubuntu > /dev/null 2>&1; then userdel -r ubuntu; fi && \
     if ! getent group $USER_GID  > /dev/null 2>&1; then groupadd --gid $USER_GID $USERNAME; fi && \
-    if ! getent passwd $USER_UID > /dev/null 2>&1; then useradd  --uid $USER_UID --gid $USER_GID -m -s /bin/bash $USERNAME; fi && \
+    if ! getent passwd $USERNAME > /dev/null 2>&1; then useradd --uid $USER_UID --gid $USER_GID -m -s /bin/bash $USERNAME; fi && \
     usermod -aG plugdev,video,dialout $USERNAME && \
     echo "$USERNAME ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME && \
     chmod 0440 /etc/sudoers.d/$USERNAME
@@ -128,7 +128,7 @@ ENV HOME=/home/$USERNAME
 WORKDIR $HOME/ros2_ws
 
 RUN echo "source /opt/ros/humble/setup.bash"                                              >> $HOME/.bashrc && \
-    echo "if [ -f $HOME/ros2_ws/install/setup.bash ]; then source $HOME/ros2_ws/install/setup.bash; fi" >> $HOME/.bashrc && \
+    echo "if [ -f \$HOME/ros2_ws/install/local_setup.bash ]; then source \$HOME/ros2_ws/install/local_setup.bash; fi" >> $HOME/.bashrc && \
     echo "source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash"              >> $HOME/.bashrc && \
     echo "alias cb='colcon build --symlink-install'"                                      >> $HOME/.bashrc && \
     echo "alias cbp='colcon build --symlink-install --packages-select'"                   >> $HOME/.bashrc && \

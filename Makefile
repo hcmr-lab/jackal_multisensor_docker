@@ -15,7 +15,7 @@ setup: ## First-time setup (generates .env, imports src, builds image, builds wo
 	@./scripts/setup.sh
 
 up: ## Start the container in the background
-	@$(COMPOSE) up -d
+	@bash -c 'source ./scripts/_x11_setup.sh && $(COMPOSE) up -d'
 
 down: ## Stop and remove the container
 	@$(COMPOSE) down

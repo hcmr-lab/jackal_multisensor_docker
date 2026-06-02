@@ -28,9 +28,9 @@ services:
 
     # plugdev: RealSense / Ximea USB rules.  video: FLIR Boson V4L2.
     group_add:
-      - plugdev
-      - video
-      - dialout
+      - "${PLUGDEV_GID:-46}"
+      - "${VIDEO_GID:-44}"
+      - "${DIALOUT_GID:-20}"
 
     environment:
       - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
@@ -68,4 +68,4 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      - ${XAUTHORITY:-${HOME}/.Xauthority}:/home/${USER_NAME:-ros2user}/.Xauthority:rw
+      - ${XAUTH:-/tmp/.docker-xauth-default}:/home/${USER_NAME:-ros2user}/.Xauthority:ro

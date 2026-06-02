@@ -15,10 +15,33 @@ your normal tools and rebuild inside.
 ## Quick start
 
 ```bash
-git clone <this-repo> multisensor_docker
-cd multisensor_docker
+git clone https://github.com/hcmr-lab/jackal_multisensor_docker.git
+cd jackal_multisensor_docker
 ./scripts/setup.sh        # first run only: ~10–20 min, mostly librealsense
 ./scripts/shell.sh        # drop into the container
+```
+
+### Host udev rules (one-time setup)
+ 
+**RealSense, Ximea, and other USB cameras won't work without host-side udev rules.** This is a one-time setup per lab machine.
+ 
+```bash
+./scripts/install-host-udev.sh
+```
+ 
+This script extracts the RealSense udev rules from the Docker image and installs them on your host. After running it, **unplug and re-plug your camera**. 
+ 
+Then verify:
+```bash
+lsusb | grep RealSense
+```
+ 
+**Also make sure you're in the `plugdev` group:**
+```bash
+groups | grep plugdev
+# If not present:
+sudo usermod -aG plugdev $USER
+# Then log out and back in.
 ```
 
 Inside the container:
@@ -57,8 +80,9 @@ multisensor_docker/
 │   └── entrypoint.sh      # Sources ROS + overlay + argcomplete
 ├── docker-compose.yml     # Hardware mounts, named volumes, env wiring
 ├── scripts/
-│   ├── setup.sh           # First-time onboarding (idempotent)
-│   └── shell.sh           # Open a shell in the container
+│   ├── setup.sh          # First-time onboarding (idempotent; detects host GIDs)
+│   ├── install-host-udev.sh  # One-time: extracts udev rules to host
+│   └── shell.sh          # Open a shell in the container
 ├── config/
 │   └── cyclonedds.xml     # DDS tuning (mounted read-only into container)
 ├── sensors.repos          # vcstool manifest of sensor wrapper packages            
@@ -102,15 +126,13 @@ RSUSB librealsense build with the binary apt version, breaking everything. Alway
 
 ## Per-user setup
 
-`scripts/setup.sh` writes a `.env` file with your host UID/GID so files
-created inside the container belong to you on the host. **Don't commit it.**
-
-If you ever need to share a machine across multiple lab members:
-
-```bash
-rm .env
-./scripts/setup.sh         # regenerates .env for the new user
-```
+`scripts/setup.sh` writes a `.env` file with:
+- Your host UID/GID (so files created inside belong to you)
+- Detected group IDs for `plugdev`, `video`, `dialout` (so the container user 
+  can access USB devices and serial ports)
+ 
+**Don't commit `.env`.** If you move to a different machine with different group 
+assignments, just delete `.env` and re-run `scripts/setup.sh`.
 
 ---
 
@@ -125,23 +147,34 @@ container.
 
 ## Troubleshooting
 
-**RealSense camera not detected.** Check `lsusb` on the host first — if it
+**RealSense not detected inside container:**
+```bash
+# First, check if it's detected on the HOST:
+lsusb | grep RealSense
+ 
+# If it shows up on host but not in container:
+# 1. Make sure you installed host udev rules:
+./scripts/install-host-udev.sh
+ 
+# 2. Make sure your user is in the plugdev group:
+groups | grep plugdev
+ 
+# 3. Try a different USB 3.0 port (not a hub). Unplug and re-plug.
+```
+**FLIR Boson `/dev/video0` permission denied:**
+Similar to RealSense — make sure you're in the `video` group and host udev rules are installed.
+
+**Ximea camera not detected.** Check `lsusb` on the host first — if it 
 doesn't show up there, it won't show up in the container. Try a different
-USB-3 port (not a hub). The 99-realsense-libusb.rules file is installed
-into the image; on the host you may also need it for non-Docker tools.
+USB-3 port (not a hub).
+ 
+**Serial port access denied (e.g., `/dev/ttyUSB0`):**
+Make sure you're in the `dialout` group. `setup.sh` auto-detects your host's `dialout` GID and adds you to it inside the container.
 
 **`librealsense2 not found` during colcon build.** Make sure the image
 build completed successfully. The CMake flag
 `-Dlibrealsense2_DIR=/usr/local/lib/cmake/realsense2` is set automatically
 by `setup.sh`; if you build manually, include it.
-
-**Ximea camera not detected.** Check `lsusb` on the host first — if it 
-doesn't show up there, it won't show up in the container. Try a different
-USB-3 port (not a hub).
-
-**FLIR Boson `/dev/video0` permission denied.** Make sure your user is in
-the `video` group on the host (`groups | grep video`); the container
-inherits this via `group_add` in `docker-compose.yml`.
 
 **GUIs (rviz2, rqt) won't open.** Run `xhost +local:docker` on the host
 once per session. `scripts/shell.sh` does this for you automatically.

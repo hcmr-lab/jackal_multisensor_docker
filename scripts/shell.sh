@@ -7,12 +7,22 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 PROJECT_ROOT="$( dirname "${SCRIPT_DIR}" )"
 cd "${PROJECT_ROOT}"
 
+# Set up X11 forwarding BEFORE we figure out sudo, so XAUTH is in the env
+# we then pass through to sudo (or use directly).
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/_x11_setup.sh"
+
+# Docker permission detection — preserve XAUTH/HOME/DISPLAY through sudo
+# so docker compose sees the right values when it expands ${XAUTH}.
 if docker ps > /dev/null 2>&1; then
     DOCKER="docker"
     COMPOSE="docker compose"
+elif sudo -n docker ps > /dev/null 2>&1; then
+    DOCKER="sudo --preserve-env=XAUTH,HOME,DISPLAY docker"
+    COMPOSE="sudo --preserve-env=XAUTH,HOME,DISPLAY docker compose"
 else
-    DOCKER="sudo docker"
-    COMPOSE="sudo docker compose"
+    echo "ERROR: docker not runnable as you or via passwordless sudo."
+    exit 1
 fi
 
 # Load .env to know the container name
@@ -25,9 +35,6 @@ fi
 
 CONTAINER_NAME="${CONTAINER_NAME:-multisensor_container}"
 USER_NAME="${USER_NAME:-ros2user}"
-
-# Allow X11 forwarding from the container (host-local only, no network exposure)
-xhost +local:docker > /dev/null 2>&1 || true
 
 if [ -z "$(${DOCKER} ps -q -f name=${CONTAINER_NAME})" ]; then
     echo "-> Container not running, starting it..."
