@@ -16,19 +16,26 @@ cd "${PROJECT_ROOT}"
 # shellcheck disable=SC1091
 source "${SCRIPT_DIR}/_x11_setup.sh"
 
-# ---- Docker permission detection ------------------------------------------
-if docker ps > /dev/null 2>&1; then
-    DOCKER="docker"
-    COMPOSE="docker compose"
-elif sudo -n docker ps > /dev/null 2>&1; then
-    DOCKER="sudo --preserve-env=XAUTH,HOME,DISPLAY docker"
-    COMPOSE="sudo --preserve-env=XAUTH,HOME,DISPLAY docker compose"
-    echo "-> Using sudo for Docker (consider: sudo usermod -aG docker $USER && relogin)"
-else
-    echo "ERROR: docker not runnable as you or via passwordless sudo."
-    echo "       Either add yourself to the 'docker' group or grant NOPASSWD sudo."
+# Check if Docker is accessible
+if ! docker ps > /dev/null 2>&1; then
+    cat <<EOF
+ERROR: Docker is not accessible to your user.
+
+  Most likely you're not in the 'docker' group. Fix it:
+
+    sudo usermod -aG docker \$USER
+    newgrp docker     # activates immediately in this shell
+                      # (or log out and back in to apply everywhere)
+
+  Then verify:
+    docker ps
+
+EOF
     exit 1
 fi
+
+DOCKER="docker"
+COMPOSE="docker compose"
 
 echo "========================================================================"
 echo "  Multisensor Docker — Setup"
@@ -108,12 +115,9 @@ else
     echo "   Container already running."
 fi
 
-# Wait until exec works
+# Wait until container is healthy (HEALTHCHECK passes)
 echo -n "   Waiting for container to be ready"
-until ${DOCKER} exec "${CONTAINER_NAME}" true > /dev/null 2>&1; do
-    echo -n "."
-    sleep 1
-done
+${COMPOSE} up -d --wait
 echo " ready."
 
 # ---- [5/5] First-time colcon build -----------------------------------------

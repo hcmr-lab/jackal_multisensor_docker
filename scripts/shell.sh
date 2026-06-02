@@ -12,18 +12,14 @@ cd "${PROJECT_ROOT}"
 # shellcheck disable=SC1091
 source "${SCRIPT_DIR}/_x11_setup.sh"
 
-# Docker permission detection — preserve XAUTH/HOME/DISPLAY through sudo
-# so docker compose sees the right values when it expands ${XAUTH}.
-if docker ps > /dev/null 2>&1; then
-    DOCKER="docker"
-    COMPOSE="docker compose"
-elif sudo -n docker ps > /dev/null 2>&1; then
-    DOCKER="sudo --preserve-env=XAUTH,HOME,DISPLAY docker"
-    COMPOSE="sudo --preserve-env=XAUTH,HOME,DISPLAY docker compose"
-else
-    echo "ERROR: docker not runnable as you or via passwordless sudo."
+# Check docker permission
+if ! docker ps > /dev/null 2>&1; then
+    echo "ERROR: Docker is not accessible. Run scripts/setup.sh for setup instructions."
     exit 1
 fi
+
+DOCKER="docker"
+COMPOSE="docker compose"
 
 # Load .env to know the container name
 if [ -f .env ]; then

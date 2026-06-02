@@ -17,6 +17,24 @@ if [ -z "$IMAGE_NAME" ]; then
     exit 1
 fi
 
+# Get the image name from docker-compose.yml
+IMAGE_NAME=$(grep -E '^\s+image:' docker-compose.yml | head -1 | awk '{print $2}')
+if [ -z "$IMAGE_NAME" ]; then
+    echo "ERROR: Could not find image name in docker-compose.yml"
+    exit 1
+fi
+
+if ! docker ps > /dev/null 2>&1; then
+    echo "ERROR: Docker is not accessible to your user."
+    echo "       Add yourself to the docker group:"
+    echo "         sudo usermod -aG docker \$USER"
+    echo "         newgrp docker"
+    exit 1
+fi
+
+DOCKER="docker"
+COMPOSE="docker compose"
+
 echo "========================================================================"
 echo "  Installing host udev rules for RealSense"
 echo "  Image: $IMAGE_NAME"
@@ -24,16 +42,16 @@ echo "========================================================================"
 echo ""
 
 # Check if the image exists; if not, build it
-if ! docker image inspect "$IMAGE_NAME" > /dev/null 2>&1; then
+if ! ${DOCKER} image inspect "$IMAGE_NAME" > /dev/null 2>&1; then
     echo "-> Image '$IMAGE_NAME' not found locally. Building..."
-    docker compose build
+    ${COMPOSE} build
     echo ""
 fi
 
 RULES_FILE="/etc/udev/rules.d/99-realsense-libusb.rules"
 
 echo "-> Extracting rules from container image..."
-docker run --rm "$IMAGE_NAME" cat /etc/udev/rules.d/99-realsense-libusb.rules | \
+${DOCKER} run --rm "$IMAGE_NAME" cat /etc/udev/rules.d/99-realsense-libusb.rules | \
     sudo tee "$RULES_FILE" > /dev/null
 echo "   Wrote to $RULES_FILE"
 

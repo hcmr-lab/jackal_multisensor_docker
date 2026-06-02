@@ -11,6 +11,17 @@ on your host and are bind-mounted into the container, so you edit code with
 your normal tools and rebuild inside.
 
 ---
+## Prerequisites
+
+- Linux host (Ubuntu 20.04 tested)
+- [Docker Engine](https://docs.docker.com/engine/install/ubuntu/) & [Docker Compose] (https://docs.docker.com/compose/install/)
+- Your user in the `docker` group:
+
+  ```bash
+    sudo usermod -aG docker $USER
+    newgrp docker     # activate in current shell (or log out/in)
+    docker ps         # verify
+  ```
 
 ## Quick start
 
@@ -82,6 +93,7 @@ multisensor_docker/
 ├── scripts/
 │   ├── setup.sh          # First-time onboarding (idempotent; detects host GIDs)
 │   ├── install-host-udev.sh  # One-time: extracts udev rules to host
+│   ├──_x11_setup.sh      # Helper script for setting XAUTH 
 │   └── shell.sh          # Open a shell in the container
 ├── config/
 │   └── cyclonedds.xml     # DDS tuning (mounted read-only into container)
@@ -105,11 +117,10 @@ changes appear instantly in the container. The image does **not** contain
 any ROS packages — it contains only the SDK-level pieces (librealsense,
 Ximea SDK) plus apt-installed rosdep dependencies.
 
-### Why build artifacts go in named volumes
+### Why build artifacts are bind-mounted
 
-`build/`, `install/`, and `log/` live in Docker-managed named volumes so
-they (a) persist across `docker compose down` and (b) don't end up in your
-git history. If a rebuild gets confused, `make clean` wipes them.
+`build/`, `install/`, and `log/` are bind-mounted to `./sensor_ws/` so 
+each user's clone has isolated artifacts. 
 
 ### Adding a new sensor package
 
@@ -122,6 +133,10 @@ git history. If a rebuild gets confused, `make clean` wipes them.
 ⚠️ **Never run `rosdep install` without the `--skip-keys` flag** — it will overwrite the custom 
 RSUSB librealsense build with the binary apt version, breaking everything. Always use `rosdep-safe-install` 
 (the function provided in your shell) instead.
+
+⚠️ Never run colcon build on the host. Always build inside the container
+(cb alias, or make rebuild). Host-built binaries will segfault when loaded
+by the container
 ---
 
 ## Per-user setup
@@ -176,9 +191,10 @@ build completed successfully. The CMake flag
 `-Dlibrealsense2_DIR=/usr/local/lib/cmake/realsense2` is set automatically
 by `setup.sh`; if you build manually, include it.
 
-**GUIs (rviz2, rqt) won't open.** Run `xhost +local:docker` on the host
-once per session. `scripts/shell.sh` does this for you automatically.
+**GUIs (rviz2, rqt) won't open.** `./scripts/shell.sh` sets up X11 forwarding 
+for you (generates an X cookie at `/tmp/.docker-xauth-<uid>` and runs xhost). 
+If you're starting the container some other way (e.g. `docker compose up` 
+directly), source `./scripts/_x11_setup.sh` first so XAUTH is set.
 
-**`docker compose` says it needs sudo.** Either add yourself to the docker
-group (`sudo usermod -aG docker $USER`, then log out/in) or let the
-scripts fall back to `sudo` — they detect both.
+**`docker compose` says it needs sudo.** Add yourself to the docker
+group (`sudo usermod -aG docker $USER`, then log out/in).

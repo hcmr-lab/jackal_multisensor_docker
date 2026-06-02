@@ -91,7 +91,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # ---------- 2. Pull in librealsense built in stage 1 ----------
 COPY --from=builder /usr/local/ /usr/local/
 COPY --from=builder /usr/src/librealsense/config/99-realsense-libusb.rules /etc/udev/rules.d/
-ENV PYTHONPATH=${PYTHONPATH}:/usr/local/lib
+ENV PYTHONPATH=/usr/local/lib${PYTHONPATH:+:${PYTHONPATH}}
 
 # ---------- 3. Ximea SDK ----------
 # The Ximea installer probes udev, which isn't running during `docker build`.
@@ -118,6 +118,10 @@ RUN if getent passwd ubuntu > /dev/null 2>&1; then userdel -r ubuntu; fi && \
 
 RUN rosdep init || true
 
+# HEALTHCHECK lets docker compose up --wait work reliably
+HEALTHCHECK --interval=2s --timeout=1s --start-period=5s --retries=3 \
+    CMD test -f /opt/ros/humble/setup.bash || exit 1
+    
 # ---------- 5. Entrypoint ----------
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh

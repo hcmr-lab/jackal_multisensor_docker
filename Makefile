@@ -2,8 +2,7 @@
 # Run `make help` for the list.
 
 SHELL := /bin/bash
-COMPOSE := $(shell docker ps > /dev/null 2>&1 && echo "docker compose" || echo "sudo docker compose")
-
+COMPOSE := docker compose
 .DEFAULT_GOAL := help
 
 .PHONY: help setup up down shell build rebuild logs clean nuke status
