@@ -23,17 +23,19 @@ your normal tools and rebuild inside.
     docker ps         # verify
   ```
 - **Avahi daemon** (for Ouster mDNS hostname discovery):
-```bash
-  sudo apt install avahi-daemon
-  sudo systemctl start avahi-daemon
-  sudo systemctl enable avahi-daemon  # auto-start on reboot
-```
+
+  ```bash
+    sudo apt install avahi-daemon
+    sudo systemctl start avahi-daemon
+    sudo systemctl enable avahi-daemon  # auto-start on reboot
+  ```
 
 ## Quick start
 
 ```bash
 git clone https://github.com/hcmr-lab/jackal_multisensor_docker.git
 cd jackal_multisensor_docker
+chmod +x scripts/*.sh
 ./scripts/setup.sh        # first run only: ~10–20 min, mostly librealsense
 ./scripts/shell.sh        # drop into the container
 ```
@@ -48,17 +50,9 @@ cd jackal_multisensor_docker
  
 This script extracts the RealSense and Ximea udev rules from the Docker image and installs them on your host. After running it, **unplug and re-plug your camera**. 
  
-Then verify:
+Then verify on the host:
 ```bash
 lsusb | grep RealSense
-```
- 
-**Also make sure you're in the `plugdev` group:**
-```bash
-groups | grep plugdev
-# If not present:
-sudo usermod -aG plugdev $USER
-# Then log out and back in.
 ```
 
 Inside the container:
@@ -69,6 +63,18 @@ ros2 launch realsense2_camera rs_launch.py  # or your own launch file
 ```
 
 That's it. Subsequent sessions are just `./scripts/shell.sh`.
+
+### Advanced: host-side USB access
+
+You only need this if you want to access cameras **directly on the host** 
+(not through the container). The Docker container does not require host-user 
+group membership — its USB access is handled by `group_add` in 
+`docker-compose.yml`.
+
+```bash
+sudo usermod -aG plugdev,video,dialout $USER
+newgrp plugdev
+```
 
 ---
 
@@ -177,7 +183,7 @@ lsusb | grep RealSense
 # 1. Make sure you installed host udev rules:
 ./scripts/install-host-udev.sh
  
-# 2. Make sure your user is in the plugdev group:
+# 2. Inside container make sure your user is in plugdev group:
 groups | grep plugdev
  
 # 3. Try a different USB 3.0 port (not a hub). Unplug and re-plug.

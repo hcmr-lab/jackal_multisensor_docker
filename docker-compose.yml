@@ -68,4 +68,4 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      - ${XAUTH:-/tmp/.docker-xauth-default}:/home/${USER_NAME:-ros2user}/.Xauthority:ro
+      - /tmp/.docker-xauth-${USER_UID:-1000}:/home/${USER_NAME:-ros2user}/.Xauthority:ro

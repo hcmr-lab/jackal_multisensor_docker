@@ -80,6 +80,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         udev \
         v4l-utils \
         avahi-daemon avahi-utils \
+        xauth \
+        iproute2 \
         # Quality of life
         sudo git wget curl nano vim tmux less \
         python3-pip \
@@ -120,9 +122,9 @@ RUN if getent passwd ubuntu > /dev/null 2>&1; then userdel -r ubuntu; fi && \
 RUN rosdep init || true
 
 # HEALTHCHECK lets docker compose up --wait work reliably
-HEALTHCHECK --interval=2s --timeout=1s --start-period=5s --retries=3 \
-    CMD test -f /opt/ros/humble/setup.bash || exit 1
-    
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD test -f /opt/ros/humble/setup.bash
+
 # ---------- 5. Entrypoint ----------
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh

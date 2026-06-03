@@ -7,8 +7,8 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 PROJECT_ROOT="$( dirname "${SCRIPT_DIR}" )"
 cd "${PROJECT_ROOT}"
 
-# Set up X11 forwarding BEFORE we figure out sudo, so XAUTH is in the env
-# we then pass through to sudo (or use directly).
+# Set up X11 forwarding before container interaction so XAUTH is exported
+# and the per-user cookie file is up-to-date for this session.
 # shellcheck disable=SC1091
 source "${SCRIPT_DIR}/_x11_setup.sh"
 
@@ -40,4 +40,6 @@ if [ -z "$(${DOCKER} ps -q -f name=${CONTAINER_NAME})" ]; then
     done
 fi
 
-exec ${DOCKER} exec -it -u "${USER_NAME}" "${CONTAINER_NAME}" bash
+exec ${DOCKER} exec -it \
+    -e DISPLAY="${DISPLAY:-}" \
+    -u "${USER_NAME}" "${CONTAINER_NAME}" bash
