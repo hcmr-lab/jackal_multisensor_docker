@@ -37,6 +37,14 @@ fi
 DOCKER="docker"
 COMPOSE="docker compose"
 
+# Check for avahi
+if ! systemctl is-active --quiet avahi-daemon; then
+    cat <<EOF
+   WARNING: avahi-daemon is not running (needed for Ouster .local hostname resolution).
+   Fix it with:  sudo systemctl start avahi-daemon
+EOF
+fi
+
 echo "========================================================================"
 echo "  Multisensor Docker — Setup"
 echo "  Project root: ${PROJECT_ROOT}"

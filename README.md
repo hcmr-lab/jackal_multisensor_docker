@@ -14,7 +14,7 @@ your normal tools and rebuild inside.
 ## Prerequisites
 
 - Linux host (Ubuntu 20.04 tested)
-- [Docker Engine](https://docs.docker.com/engine/install/ubuntu/) & [Docker Compose] (https://docs.docker.com/compose/install/)
+- [Docker Engine](https://docs.docker.com/engine/install/ubuntu/) & [Docker Compose](https://docs.docker.com/compose/install/)
 - Your user in the `docker` group:
 
   ```bash
@@ -22,6 +22,12 @@ your normal tools and rebuild inside.
     newgrp docker     # activate in current shell (or log out/in)
     docker ps         # verify
   ```
+- **Avahi daemon** (for Ouster mDNS hostname discovery):
+```bash
+  sudo apt install avahi-daemon
+  sudo systemctl start avahi-daemon
+  sudo systemctl enable avahi-daemon  # auto-start on reboot
+```
 
 ## Quick start
 
@@ -77,7 +83,6 @@ That's it. Subsequent sessions are just `./scripts/shell.sh`.
 | Rebuild the Docker image          | `make build`             |
 | Rebuild the colcon workspace      | `make rebuild`           |
 | Clear build/install/log           | `make clean`             |
-| Nuke caches (keeps your src/)     | `make nuke`              |
 | Show what's running               | `make status`            |
 
 ---
@@ -152,6 +157,7 @@ assignments, just delete `.env` and re-run `scripts/setup.sh`.
 ---
 
 ## VS Code users
+⚠️ run `script/setup.sh` first
 
 The repo includes a `.devcontainer/devcontainer.json`. Open the project
 folder, hit "Reopen in Container", and you get the full workspace with

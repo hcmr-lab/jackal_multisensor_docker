@@ -25,8 +25,8 @@ shell: ## Open a shell inside the running container
 build: ## Rebuild the Docker image (does NOT touch the colcon workspace)
 	@$(COMPOSE) build
 
-rebuild: ## Run `colcon build --symlink-install` inside the container
-	@$(COMPOSE) exec multisensor bash -lc "colcon build --symlink-install"
+rebuild:
+	@$(COMPOSE) exec multisensor /usr/local/bin/entrypoint.sh colcon build --symlink-install
 
 logs: ## Tail container logs
 	@$(COMPOSE) logs -f
@@ -37,7 +37,3 @@ status: ## Show container status
 clean: ## Remove the colcon build/install/log caches (keeps the image)
 	@$(COMPOSE) exec multisensor bash -lc "rm -rf build install log" || true
 	@echo "Workspace caches cleared. Run 'make rebuild' to recompile."
-
-nuke: ## Full reset: down + remove volumes (KEEPS your src/, .env, bags, maps)
-	@$(COMPOSE) down -v
-	@echo "Container and named volumes removed. src/, bags/, maps/ untouched."

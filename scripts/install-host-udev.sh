@@ -10,20 +10,6 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 PROJECT_ROOT="$( dirname "${SCRIPT_DIR}" )"
 cd "${PROJECT_ROOT}"
 
-# Get the image name from docker-compose.yml
-IMAGE_NAME=$(grep -E '^\s+image:' docker-compose.yml | head -1 | awk '{print $2}')
-if [ -z "$IMAGE_NAME" ]; then
-    echo "ERROR: Could not find image name in docker-compose.yml"
-    exit 1
-fi
-
-# Get the image name from docker-compose.yml
-IMAGE_NAME=$(grep -E '^\s+image:' docker-compose.yml | head -1 | awk '{print $2}')
-if [ -z "$IMAGE_NAME" ]; then
-    echo "ERROR: Could not find image name in docker-compose.yml"
-    exit 1
-fi
-
 if ! docker ps > /dev/null 2>&1; then
     echo "ERROR: Docker is not accessible to your user."
     echo "       Add yourself to the docker group:"
@@ -35,18 +21,44 @@ fi
 DOCKER="docker"
 COMPOSE="docker compose"
 
+# Get the image name from compose
+set -a
+[ -f .env ] && source .env
+set +a
+
+IMAGE_NAME=$(grep -E '^\s+image:' docker-compose.yml | head -1 | awk '{print $2}')
+IMAGE_NAME=$(eval echo "$IMAGE_NAME")
+
+# Check if image is built; if not, guide the user
+if ! ${DOCKER} image inspect "$IMAGE_NAME" > /dev/null 2>&1; then
+    cat <<EOF
+ERROR: Docker image '$IMAGE_NAME' not found.
+
+The Docker image must be built before extracting udev rules.
+
+Please run setup.sh first:
+
+  ./scripts/setup.sh
+
+This will:
+  1. Generate your .env file with your UID/GID
+  2. Build the Docker image  
+  3. Import sensor packages
+  4. Build the ROS workspace
+
+After setup.sh completes, run this script again:
+
+  ./scripts/install-host-udev.sh
+
+EOF
+    exit 1
+fi
+
 echo "========================================================================"
 echo "  Installing host udev rules for RealSense"
 echo "  Image: $IMAGE_NAME"
 echo "========================================================================"
 echo ""
-
-# Check if the image exists; if not, build it
-if ! ${DOCKER} image inspect "$IMAGE_NAME" > /dev/null 2>&1; then
-    echo "-> Image '$IMAGE_NAME' not found locally. Building..."
-    ${COMPOSE} build
-    echo ""
-fi
 
 RULES_FILE="/etc/udev/rules.d/99-realsense-libusb.rules"
 

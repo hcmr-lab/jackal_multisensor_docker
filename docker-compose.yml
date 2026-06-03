@@ -7,7 +7,7 @@ services:
         USERNAME: ${USER_NAME:-ros2user}
         USER_UID: ${USER_UID:-1000}
         USER_GID: ${USER_GID:-1000}
-    image: multisensor-humble:latest
+    image: multisensor-humble:${USER_UID}  # ✅ Per-user tag based on UID
     container_name: ${CONTAINER_NAME:-multisensor_container}
 
     # Host networking + IPC are needed for ROS 2 DDS discovery to "just work"

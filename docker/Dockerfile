@@ -79,6 +79,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         usbutils \
         udev \
         v4l-utils \
+        avahi-daemon avahi-utils \
         # Quality of life
         sudo git wget curl nano vim tmux less \
         python3-pip \
