@@ -36,7 +36,6 @@ services:
       - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
       - RMW_IMPLEMENTATION=${RMW_IMPLEMENTATION:-rmw_cyclonedds_cpp}
       - CYCLONEDDS_URI=${CYCLONEDDS_URI:-}
-      - DISPLAY=${DISPLAY:-}
       - QT_X11_NO_MITSHM=1
       # Used by some sensor SDKs (Ximea) to locate config under HOME
       - HOME=/home/${USER_NAME:-ros2user}
@@ -68,4 +67,3 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      - /tmp/.docker-xauth-${USER_UID:-1000}:/home/${USER_NAME:-ros2user}/.Xauthority:ro

@@ -121,10 +121,6 @@ RUN if getent passwd ubuntu > /dev/null 2>&1; then userdel -r ubuntu; fi && \
 
 RUN rosdep init || true
 
-# HEALTHCHECK lets docker compose up --wait work reliably
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD test -f /opt/ros/humble/setup.bash
-
 # ---------- 5. Entrypoint ----------
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh

@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 # Drop into a shell inside the running multisensor container.
-# Starts the container first if it isn't running.
+# Starts the container first if it isn't running, and refreshes the X11 cookie
+# for THIS terminal's display so GUIs work whether you're on a local terminal
+# or an `ssh -Y` session.
 set -euo pipefail
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 PROJECT_ROOT="$( dirname "${SCRIPT_DIR}" )"
 cd "${PROJECT_ROOT}"
 
-# Set up X11 forwarding before container interaction so XAUTH is exported
-# and the per-user cookie file is up-to-date for this session.
+# X11 helper (provides push_xauth_into_container).
 # shellcheck disable=SC1091
 source "${SCRIPT_DIR}/_x11_setup.sh"
 
@@ -39,6 +40,10 @@ if [ -z "$(${DOCKER} ps -q -f name=${CONTAINER_NAME})" ]; then
         sleep 1
     done
 fi
+
+# Refresh the cookie for this session's display, into the container's own
+# ~/.Xauthority (robust across local <-> ssh -Y switches).
+push_xauth_into_container "${CONTAINER_NAME}" "${USER_NAME}"
 
 exec ${DOCKER} exec -it \
     -e DISPLAY="${DISPLAY:-}" \

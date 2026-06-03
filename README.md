@@ -104,7 +104,7 @@ multisensor_docker/
 ├── scripts/
 │   ├── setup.sh          # First-time onboarding (idempotent; detects host GIDs)
 │   ├── install-host-udev.sh  # One-time: extracts udev rules to host
-│   ├──_x11_setup.sh      # Helper script for setting XAUTH 
+│   ├──_x11_setup.sh      # Sourced by shell.sh; injects X11 cookie into the container
 │   └── shell.sh          # Open a shell in the container
 ├── config/
 │   └── cyclonedds.xml     # DDS tuning (mounted read-only into container)
@@ -199,19 +199,22 @@ USB-3 port (not a hub).
 Make sure you're in the `dialout` group. `setup.sh` auto-detects your host's `dialout` GID and adds you to it inside the container.
 
 **`librealsense2 not found` during colcon build.** Make sure the image
-build completed successfully. The CMake flag
-`-Dlibrealsense2_DIR=/usr/local/lib/cmake/realsense2` is set automatically
-by `setup.sh`; if you build manually, include it.
+build completed successfully. You can try including the CMake flag
+`-Dlibrealsense2_DIR=/usr/local/lib/cmake/realsense2` like in `setup.sh`.
 
 **Ximea `startAcquisition()` fails with error 13 (or dropped frames).** The Linux default USB buffer (16 MB) is too small for Ximea USB3 cameras. run 
   ```bash
   echo 0 | sudo tee /sys/module/usbcore/parameters/usbfs_memory_mb
   ```
 
-**GUIs (rviz2, rqt) won't open.** `./scripts/shell.sh` sets up X11 forwarding 
-for you (generates an X cookie at `/tmp/.docker-xauth-<uid>` and runs xhost). 
-If you're starting the container some other way (e.g. `docker compose up` 
-directly), source `./scripts/_x11_setup.sh` first so XAUTH is set.
+**GUIs (rviz2, rqt) won't open.** Always enter the container with
+`./scripts/shell.sh` — it forwards your current terminal's `$DISPLAY` and
+refreshes the X11 cookie *inside* the container for that display. Because the
+cookie is refreshed per session, this works even when you start the container
+from one terminal (e.g. a local VS Code terminal) and later open a GUI from a
+separate `ssh -Y` session on the same machine. If a GUI still fails, check that
+`echo $DISPLAY` is non-empty in the terminal you ran `shell.sh` from, and that
+you connected with `ssh -Y` (or `-X`).
 
 **`docker compose` says it needs sudo.** Add yourself to the docker
 group (`sudo usermod -aG docker $USER`, then log out/in).

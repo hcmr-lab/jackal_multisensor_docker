@@ -5,7 +5,7 @@ SHELL := /bin/bash
 COMPOSE := docker compose
 .DEFAULT_GOAL := help
 
-.PHONY: help setup up down shell build rebuild logs clean nuke status
+.PHONY: help setup up down shell build rebuild logs clean status
 
 help: ## Show this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -14,7 +14,7 @@ setup: ## First-time setup (generates .env, imports src, builds image, builds wo
 	@./scripts/setup.sh
 
 up: ## Start the container in the background
-	@bash -c 'source ./scripts/_x11_setup.sh && $(COMPOSE) up -d'
+	@$(COMPOSE) up -d
 
 down: ## Stop and remove the container
 	@$(COMPOSE) down

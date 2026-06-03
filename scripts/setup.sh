@@ -11,11 +11,6 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 PROJECT_ROOT="$( dirname "${SCRIPT_DIR}" )"
 cd "${PROJECT_ROOT}"
 
-# Set up X11 BEFORE the sudo decision below — XAUTH must be in the env
-# we pass through to sudo so docker compose can expand it correctly.
-# shellcheck disable=SC1091
-source "${SCRIPT_DIR}/_x11_setup.sh"
-
 # Check if Docker is accessible
 if ! docker ps > /dev/null 2>&1; then
     cat <<EOF
@@ -84,15 +79,6 @@ set +a
 echo "-> [2/5] Ensuring config and sensor_ws directories exists..."
 mkdir -p config sensor_ws/src sensor_ws/build sensor_ws/install sensor_ws/log
 
-# Pre-create the fallback cookie file so bare `docker compose up` doesn't
-# trip on a missing bind mount source (Docker would create it as a directory).
-touch /tmp/.docker-xauth-default
-chmod 0644 /tmp/.docker-xauth-default
-
-# Also pre-create the per-user one (the X11 helper will overwrite this).
-touch "/tmp/.docker-xauth-$(id -u)"
-chmod 0644 "/tmp/.docker-xauth-$(id -u)"
-
 # ---- [3/5] vcs import of sensor wrappers -----------------------------------
 if [ -f "sensors.repos" ] && [ ! -d "sensor_ws/src/realsense-ros" ]; then
     echo "-> [3/5] Importing sensor wrappers from sensors.repos..."
@@ -123,9 +109,19 @@ else
     echo "   Container already running."
 fi
 
-# Wait until container is healthy (HEALTHCHECK passes)
+# Wait until the container is up and `docker exec` works.
 echo -n "   Waiting for container to be ready"
-${COMPOSE} up -d --wait
+WAIT_DEADLINE=$(( SECONDS + 60 ))
+until ${DOCKER} exec "${CONTAINER_NAME}" true > /dev/null 2>&1; do
+    if [ "${SECONDS}" -ge "${WAIT_DEADLINE}" ]; then
+        echo ""
+        echo "ERROR: container did not become ready within 60s."
+        echo "       Inspect it with:  ${COMPOSE} logs --tail=50"
+        exit 1
+    fi
+    echo -n "."
+    sleep 1
+done
 echo " ready."
 
 # ---- [5/5] First-time colcon build -----------------------------------------
@@ -145,5 +141,4 @@ echo "========================================================================"
 echo "  Setup complete."
 echo ""
 echo "  Drop into the container with:  ./scripts/shell.sh"
-echo "  Or:                            ${COMPOSE} exec multisensor bash"
 echo "========================================================================"

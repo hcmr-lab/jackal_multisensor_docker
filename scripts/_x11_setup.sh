@@ -1,44 +1,39 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# X11 setup helper — sourced by setup.sh and shell.sh.
-# Always sets XAUTH to a stable per-user path so the container's bind mount
-# doesn't change between sessions. Generates an actual cookie only when DISPLAY
-# is set (i.e. when we're in an X session).
+# X11 helper — sourced by shell.sh (and optionally setup.sh / the Makefile).
+#
+# Exposes push_xauth_into_container(): copy the cookie for the CURRENT $DISPLAY
+# into a *running* container's own ~/.Xauthority, wildcarding the host field so
+# the containerized UID is accepted.
+#
+# Why inject at exec-time instead of bind-mounting a cookie file?
+#   xauth rewrites its file with rename(), which allocates a NEW inode. A
+#   single-file Docker bind mount is pinned to the original inode, so host-side
+#   cookie refreshes never reach a long-lived container. Writing the cookie
+#   inside the container sidesteps that entirely and lets every session
+#   (local terminal, ssh -Y, ...) bring its own per-display cookie.
 # ==============================================================================
 
-# 1. Always pin XAUTH to the same path so the bind mount is consistent
-XAUTH="/tmp/.docker-xauth-$(id -u)"
-export XAUTH
+# Push the host's cookie for the current $DISPLAY into a running container.
+#   $1 = container name
+#   $2 = username inside the container
+push_xauth_into_container() {
+    local container="$1"
+    local user="$2"
 
-# 2. Ensure the file exists so docker doesn't auto-create it as a directory
-touch "$XAUTH"
-chmod 0644 "$XAUTH"
+    # No X session, or no xauth on the host → nothing to do.
+    [ -n "${DISPLAY:-}" ] || return 0
+    command -v xauth > /dev/null 2>&1 || return 0
 
-# 3. No X session → nothing to write. Bind mount points to empty file.
-if [ -z "${DISPLAY:-}" ]; then
-    return 0 2>/dev/null || exit 0
-fi
+    local source_auth="${XAUTHORITY:-$HOME/.Xauthority}"
+    [ -f "${source_auth}" ] || return 0
 
-# 4. Determine the source xauth file. Priority:
-#   1. $XAUTHORITY (if set AND non-empty AND file exists)
-#   2. ~/.Xauthority (the universal fallback)
-# Note: we don't trust XAUTHORITY's default-when-unset behavior because
-# some shells set it to empty string, which xauth handles inconsistently.
-SOURCE_AUTH=""
-if [ -n "${XAUTHORITY:-}" ] && [ -f "${XAUTHORITY}" ]; then
-    SOURCE_AUTH="${XAUTHORITY}"
-elif [ -f "${HOME}/.Xauthority" ]; then
-    SOURCE_AUTH="${HOME}/.Xauthority"
-fi
-
-if [ -n "${SOURCE_AUTH}" ] && command -v xauth > /dev/null 2>&1; then
-    : > "$XAUTH"  # truncate
-    xauth -f "${SOURCE_AUTH}" nlist 2>/dev/null \
+    # nlist "$DISPLAY" selects only this display's entry (xauth normalises
+    # localhost / <host>/unix / :N to one entry, so it matches an ssh -Y cookie
+    # too). sed rewrites the family field to ffff (FamilyWild) so the cookie is
+    # accepted regardless of host identity.
+    xauth -f "${source_auth}" nlist "${DISPLAY}" 2>/dev/null \
         | sed -e 's/^..../ffff/' \
-        | xauth -f "$XAUTH" nmerge - 2>/dev/null || true
-fi
-
-# 6. Belt-and-suspenders fallback
-if command -v xhost > /dev/null 2>&1; then
-    xhost +SI:localuser:"$(id -un)" > /dev/null 2>&1 || true
-fi
+        | docker exec -i -u "${user}" "${container}" \
+              bash -c 'xauth -f "$HOME/.Xauthority" nmerge - 2>/dev/null' || true
+}
