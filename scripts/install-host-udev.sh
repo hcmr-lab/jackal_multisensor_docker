@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Install host-side udev rules for RealSense devices.
+# Install host-side udev rules for USB sensors (RealSense, Ximea).
 # Run ONCE per lab machine (by an admin or any user with sudo), not per user.
-# This copies the rules from inside the Docker image to the host.
+# Copies the sensor udev rules baked into the Docker image out to the host.
 # ==============================================================================
 set -euo pipefail
 
@@ -55,21 +55,37 @@ EOF
 fi
 
 echo "========================================================================"
-echo "  Installing host udev rules for RealSense"
+echo "  Installing host udev rules for USB sensors (RealSense, Ximea)"
 echo "  Image: $IMAGE_NAME"
 echo "========================================================================"
 echo ""
 
-RULES_FILE="/etc/udev/rules.d/99-realsense-libusb.rules"
+# ---- 1. Discover sensor udev rules baked into the image --------------------
+# RealSense ships 99-realsense-libusb.rules; the Ximea SDK installer drops its
+# own rule whose filename varies between SDK versions, so we glob for it rather
+# than hardcode. --entrypoint bash keeps ROS-sourcing output out of stdout.
+echo "-> Discovering sensor udev rules inside the image..."
+RULE_FILES=$(${DOCKER} run --rm --entrypoint bash "$IMAGE_NAME" -c '
+    shopt -s nullglob
+    for f in /etc/udev/rules.d/*realsense* \
+         /etc/udev/rules.d/*ximea*; do
+      echo "$f"
+    done')
 
-echo "-> Extracting rules from container image..."
-${DOCKER} run --rm "$IMAGE_NAME" cat /etc/udev/rules.d/99-realsense-libusb.rules | \
-    sudo tee "$RULES_FILE" > /dev/null
-echo "   Wrote to $RULES_FILE"
-
-echo ""
-echo "-> Setting permissions..."
-sudo chmod 0644 "$RULES_FILE"
+if [ -z "${RULE_FILES//[[:space:]]/}" ]; then
+    echo "   WARNING: no RealSense/Ximea udev rules found in the image."
+    echo "            Is the image fully built and did the Ximea SDK install succeed?"
+fi
+ 
+# ---- 2. Copy each discovered rule out to the host --------------------------
+while IFS= read -r src; do
+    [ -z "$src" ] && continue
+    base="$(basename "$src")"
+    dest="/etc/udev/rules.d/${base}"
+    echo "-> Installing ${base}"
+    ${DOCKER} run --rm --entrypoint cat "$IMAGE_NAME" "$src" | sudo tee "$dest" > /dev/null
+    sudo chmod 0644 "$dest"
+done <<< "$RULE_FILES"
 
 echo ""
 echo "-> Reloading udev rules and triggering device re-enumeration..."
@@ -86,8 +102,8 @@ echo "     groups | grep plugdev"
 echo "     If not, run: sudo usermod -aG plugdev \$USER"
 echo "     Then log out and back in."
 echo ""
-echo "  2. Unplug and re-plug your RealSense camera."
+echo "  2. Unplug and re-plug your camera(s)."
 echo ""
-echo "  3. Verify it's detected:"
-echo "     lsusb | grep RealSense"
+echo "  3. Verify detection:"
+echo "     lsusb | grep -Ei 'realsense|ximea'"
 echo "========================================================================"

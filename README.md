@@ -46,7 +46,7 @@ cd jackal_multisensor_docker
 ./scripts/install-host-udev.sh
 ```
  
-This script extracts the RealSense udev rules from the Docker image and installs them on your host. After running it, **unplug and re-plug your camera**. 
+This script extracts the RealSense and Ximea udev rules from the Docker image and installs them on your host. After running it, **unplug and re-plug your camera**. 
  
 Then verify:
 ```bash
@@ -157,7 +157,7 @@ assignments, just delete `.env` and re-run `scripts/setup.sh`.
 ---
 
 ## VS Code users
-⚠️ run `script/setup.sh` first
+⚠️ run `scripts/setup.sh` first
 
 The repo includes a `.devcontainer/devcontainer.json`. Open the project
 folder, hit "Reopen in Container", and you get the full workspace with
@@ -196,6 +196,11 @@ Make sure you're in the `dialout` group. `setup.sh` auto-detects your host's `di
 build completed successfully. The CMake flag
 `-Dlibrealsense2_DIR=/usr/local/lib/cmake/realsense2` is set automatically
 by `setup.sh`; if you build manually, include it.
+
+**Ximea `startAcquisition()` fails with error 13 (or dropped frames).** The Linux default USB buffer (16 MB) is too small for Ximea USB3 cameras. run 
+  ```bash
+  echo 0 | sudo tee /sys/module/usbcore/parameters/usbfs_memory_mb
+  ```
 
 **GUIs (rviz2, rqt) won't open.** `./scripts/shell.sh` sets up X11 forwarding 
 for you (generates an X cookie at `/tmp/.docker-xauth-<uid>` and runs xhost). 

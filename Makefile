@@ -25,7 +25,7 @@ shell: ## Open a shell inside the running container
 build: ## Rebuild the Docker image (does NOT touch the colcon workspace)
 	@$(COMPOSE) build
 
-rebuild:
+rebuild: ## Rebuild the colcon workspace inside the container
 	@$(COMPOSE) exec multisensor /usr/local/bin/entrypoint.sh colcon build --symlink-install
 
 logs: ## Tail container logs
