@@ -77,7 +77,7 @@ set +a
 
 # ---- [2/5] Ensure directory structure (config might not exist on fresh clone) -
 echo "-> [2/5] Ensuring config and sensor_ws directories exists..."
-mkdir -p config sensor_ws/src sensor_ws/build sensor_ws/install sensor_ws/log
+mkdir -p config sensor_ws/src sensor_ws/build sensor_ws/install sensor_ws/log bags maps
 
 # ---- [3/5] vcs import of sensor wrappers -----------------------------------
 if [ -f "sensors.repos" ] && [ ! -d "sensor_ws/src/realsense-ros" ]; then

@@ -7,8 +7,10 @@ sensor_ws/install/
 sensor_ws/log/
 
 # Data directories (often huge, sometimes private)
-bags/
-maps/
+bags/*
+!bags/.gitkeep
+maps/*
+!maps/.gitkeep
 
 # Optional: keep calibrations OR commit them, depending on lab policy.
 calibrations/
