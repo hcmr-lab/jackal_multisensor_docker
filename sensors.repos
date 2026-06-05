@@ -16,9 +16,12 @@ repositories:
     type: git
     url: https://github.com/hcmr-lab/flir_boson_usb2.git
     version: main
-
+  ouster-ros:
+    type: git
+    url: https://github.com/ouster-lidar/ouster-ros.git
+    version: ros2
 # ---------- Add your other sensor wrappers below ----------
 #  package_name:
 #    type: git
 #    url: <link to git>
-#    version: main
+#    version: main or branch-name or tag

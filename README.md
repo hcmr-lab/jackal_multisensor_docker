@@ -133,22 +133,41 @@ Ximea SDK) plus apt-installed rosdep dependencies.
 `build/`, `install/`, and `log/` are bind-mounted to `./sensor_ws/` so 
 each user's clone has isolated artifacts. 
 
-### Adding a new sensor package
+## Adding a new sensor package
 
-1. Add the repo to `sensors.repos`, OR drop your own package directly under `src/`.
-2. If you added a new system dependency to your `package.xml`:
-   - **Quick path** — run `rosdep-safe-install` inside the container.
-   - **Permanent path** — `make build` to rebuild the image (re-bakes rosdep).
-3. Inside the container: `cb` (or `cbp <pkg_name>` for just one).
+There are two ways to add a sensor package to this workspace. Choose the method that fits your workflow.
 
-⚠️ **Never run `rosdep install` without the `--skip-keys` flag** — it will overwrite the custom 
-RSUSB librealsense build with the binary apt version, breaking everything. Always use `rosdep-safe-install` 
+#### Method 1: The Production Method (Recommended)
+Use this method to permanently add a sensor driver (like Ouster, RealSense, Ximea) to the robotic stack.
+
+1. **Register the Repo:** Add the repository link and version tag to `sensors.repos`.
+2. **Run setup:** From your **host terminal**, run the setup script to download the code and rebuild the container to bake any new `package.xml` system dependencies directly into the Docker image:
+    ```bash
+    ./scripts/setup.sh
+    ```
+
+#### Method 2: The Quick Dev Method (Custom Packages)
+Use this method if you are writing your own custom driver or testing a downloaded package locally.
+
+1. **Add the Code:** `git clone` or copy your ROS 2 package folder directly into `sensor_ws/src/` on your host machine.
+2. **Install Dependencies Live:** Open a terminal inside the running container and use the custom wrapper to safely install any new dependencies:
+    ```bash
+    make shell
+    rosdep-safe-install # safety wrapper around rosdep install
+    ```
+3. **Compile:** Still inside the container, build the workspace:
+    ```bash
+    # cbp is alias for colcon build --symlink-install --packages-select 
+    # with --cmake-args -DCMAKE_BUILD_TYPE=Release
+    cbp <package_name>
+    ```
+
+⚠️ Critical Development Warnings 
+* **Never run `rosdep install` without the `--skip-keys` flag** — it will overwrite the custom RSUSB librealsense build with the binary apt version, breaking everything. Always use `rosdep-safe-install` 
 (the function provided in your shell) instead.
 
-⚠️ Never run colcon build on the host. Always build inside the container
-(cb alias, or make rebuild). Host-built binaries will segfault when loaded
-by the container
----
+* Never run `colcon build` on the host. Always build inside the container (cb alias, or make rebuild). Host-built binaries will segfault when loaded by the container
+
 
 ## Per-user setup
 
@@ -160,7 +179,6 @@ by the container
 **Don't commit `.env`.** If you move to a different machine with different group 
 assignments, just delete `.env` and re-run `scripts/setup.sh`.
 
----
 
 ## VS Code users
 ⚠️ run `scripts/setup.sh` first
@@ -170,7 +188,6 @@ folder, hit "Reopen in Container", and you get the full workspace with
 ROS extensions, clangd, Python tooling, and a terminal already inside the
 container.
 
----
 
 ## Troubleshooting
 

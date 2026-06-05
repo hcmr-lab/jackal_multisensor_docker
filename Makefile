@@ -23,10 +23,10 @@ shell: ## Open a shell inside the running container
 	@./scripts/shell.sh
 
 build: ## Rebuild the Docker image (does NOT touch the colcon workspace)
-	@$(COMPOSE) build
+	@$(COMPOSE) up -d --build
 
-rebuild: ## Rebuild the colcon workspace inside the container
-	@$(COMPOSE) exec multisensor /usr/local/bin/entrypoint.sh colcon build --symlink-install
+rebuild: ## Rebuild the colcon workspace inside the container (with Release optimizations)
+	@$(COMPOSE) exec multisensor /usr/local/bin/entrypoint.sh colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
 
 logs: ## Tail container logs
 	@$(COMPOSE) logs -f
@@ -34,6 +34,6 @@ logs: ## Tail container logs
 status: ## Show container status
 	@$(COMPOSE) ps
 
-clean: ## Remove the colcon build/install/log caches (keeps the image)
-	@$(COMPOSE) exec multisensor bash -lc "rm -rf build install log" || true
+clean: ## Remove the colcon build/install/log caches safely from the host
+	@rm -rf sensor_ws/build sensor_ws/install sensor_ws/log
 	@echo "Workspace caches cleared. Run 'make rebuild' to recompile."

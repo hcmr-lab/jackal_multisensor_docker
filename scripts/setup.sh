@@ -80,10 +80,10 @@ echo "-> [2/5] Ensuring config and sensor_ws directories exists..."
 mkdir -p config sensor_ws/src sensor_ws/build sensor_ws/install sensor_ws/log bags maps
 
 # ---- [3/5] vcs import of sensor wrappers -----------------------------------
-if [ -f "sensors.repos" ] && [ ! -d "sensor_ws/src/realsense-ros" ]; then
+if [ -f "sensors.repos" ]; then
     echo "-> [3/5] Importing sensor wrappers from sensors.repos..."
     if command -v vcs > /dev/null 2>&1; then
-        vcs import sensor_ws/src < sensors.repos
+        vcs import --recursive sensor_ws/src < sensors.repos
     else
         # vcstool isn't on the host — run as root (for apt), then chown to user
         echo "   (vcstool not on host; running inside a temporary container)"
@@ -92,22 +92,19 @@ if [ -f "sensors.repos" ] && [ ! -d "sensor_ws/src/realsense-ros" ]; then
             -w /work \
             ros:humble-ros-base bash -c \
             "apt-get update -qq && apt-get install -y -qq python3-vcstool > /dev/null && \
-            vcs import sensor_ws/src < sensors.repos && \
+            git config --global --add safe.directory '*' && \
+            vcs import --recursive sensor_ws/src < sensors.repos && \
             chown -R $(id -u):$(id -g) sensor_ws/src"
     fi
 else
-    echo "-> [3/5] Sensor wrappers already present in sensor_ws/src/, skipping import."
+    echo "-> [3/5] sensors.repos not found."
 fi
 
 # ---- [4/5] Build (or rebuild) the image ------------------------------------
 # We force --build on first run so rosdep bakes from the freshly-imported src.
 # Subsequent runs use the cache and are fast.
-echo "-> [4/5] Starting container (building image if needed)..."
-if [ -z "$(${DOCKER} ps -q -f name=${CONTAINER_NAME})" ]; then
-    ${COMPOSE} up -d --build
-else
-    echo "   Container already running."
-fi
+echo "-> [4/5] Starting/Updating container (building image if needed)..."
+${COMPOSE} up -d --build
 
 # Wait until the container is up and `docker exec` works.
 echo -n "   Waiting for container to be ready"
@@ -124,18 +121,13 @@ until ${DOCKER} exec "${CONTAINER_NAME}" true > /dev/null 2>&1; do
 done
 echo " ready."
 
-# ---- [5/5] First-time colcon build -----------------------------------------
-echo "-> [5/5] Checking workspace build status..."
-if ${DOCKER} exec "${CONTAINER_NAME}" \
-        test -f "/home/${USER_NAME}/ros2_ws/install/setup.bash"; then
-    echo "   Workspace already built. Use 'cb' inside the container to rebuild."
-else
-    echo "   No install/ found — running first colcon build..."
-    ${DOCKER} exec -t -u "${USER_NAME}" "${CONTAINER_NAME}" bash -lc \
-        "source /opt/ros/humble/setup.bash && \
-         colcon build --symlink-install \
-            --cmake-args -Dlibrealsense2_DIR=/usr/local/lib/cmake/realsense2"
-fi
+# ---- [5/5] Build workspace (colcon is incremental) -------------------------
+echo "-> [5/5] Building workspace (incremental)..."
+${DOCKER} exec -t -u "${USER_NAME}" "${CONTAINER_NAME}" bash -lc \
+    "source /opt/ros/humble/setup.bash && \
+     colcon build --symlink-install \
+        --cmake-args -DCMAKE_BUILD_TYPE=Release \
+                     -Dlibrealsense2_DIR=/usr/local/lib/cmake/realsense2"
 
 echo "========================================================================"
 echo "  Setup complete."

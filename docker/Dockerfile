@@ -65,6 +65,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         ros-humble-cv-bridge \
         ros-humble-camera-info-manager \
         ros-humble-camera-calibration-parsers \
+        ros-humble-pointcloud-to-laserscan \
         # Build/dev toolchain (lab members write code in here)
         ament-cmake \
         build-essential \
@@ -80,7 +81,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         udev \
         v4l-utils \
         avahi-daemon avahi-utils \
+        libnss-mdns \
         xauth \
+        iputils-ping \
         iproute2 \
         # Quality of life
         sudo git wget curl nano vim tmux less \
@@ -133,8 +136,8 @@ WORKDIR $HOME/ros2_ws
 RUN echo "source /opt/ros/humble/setup.bash"                                              >> $HOME/.bashrc && \
     echo "if [ -f \$HOME/ros2_ws/install/local_setup.bash ]; then source \$HOME/ros2_ws/install/local_setup.bash; fi" >> $HOME/.bashrc && \
     echo "source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash"              >> $HOME/.bashrc && \
-    echo "alias cb='colcon build --symlink-install'"                                      >> $HOME/.bashrc && \
-    echo "alias cbp='colcon build --symlink-install --packages-select'"                   >> $HOME/.bashrc && \
+    echo "alias cb='colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release'" >> $HOME/.bashrc && \
+    echo "alias cbp='colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release --packages-select'" >> $HOME/.bashrc && \
     echo ""                                                                                 >> $HOME/.bashrc && \
     echo "# Safe rosdep wrapper — always protects the custom RSUSB librealsense build"    >> $HOME/.bashrc && \
     echo "rosdep-safe-install() {"                                                        >> $HOME/.bashrc && \
