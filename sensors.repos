@@ -4,6 +4,7 @@
 # Pin to tags/commits in production; branch refs are convenient during
 # bring-up but make builds non-reproducible.
 repositories:
+  # last tested realsense-ros2 version: 6d87b071dcfef15f2a0407e1e78945256add70d0
   realsense-ros:
     type: git
     url: https://github.com/realsenseai/realsense-ros.git
@@ -16,6 +17,7 @@ repositories:
     type: git
     url: https://github.com/hcmr-lab/flir_boson_usb2.git
     version: main
+  # last tested ouster-ros2 version: 8570a92e776e8aa919e2250995c07c62810e9a65
   ouster-ros:
     type: git
     url: https://github.com/ouster-lidar/ouster-ros.git

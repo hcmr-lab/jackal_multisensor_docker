@@ -12,7 +12,6 @@ The image bakes in all SDK-level dependencies; ROS packages live in `src/`
 on your host and are bind-mounted into the container, so you edit code with
 your normal tools and rebuild inside.
 
----
 ## Prerequisites
 
 - Linux host (Ubuntu 20.04 tested)
@@ -40,7 +39,29 @@ cd jackal_multisensor_docker
 chmod +x scripts/*.sh
 ./scripts/setup.sh        # first run only: ~10–20 min, mostly librealsense
 ./scripts/shell.sh        # drop into the container
+
+# After each system reboot
+./scripts/apply_on_reboot.sh   # sets kernel buffers for LiDAR/USB cameras
 ```
+### Networking setting
+**1. ROS Domain ID**
+Edit `ROS_DOMAIN_ID` in `.env`. All machines that need to communicate must use the **same domain ID**. The default is `0`.
+
+**2. ROS Network Interface**
+This setup uses CycloneDDS (`rmw_cyclonedds_cpp`) with a custom config at
+`config/cyclonedds.xml` that pins the interface and tunes buffer sizes for
+high-bandwidth sensor data.
+
+Edit the interface name in `config/cyclonedds.xml`:
+  ```xml
+    <Interfaces>
+        <NetworkInterface name="enp1s0" priority="default" multicast="default" />
+    </Interfaces>
+  ```
+Run `ip link show` to find your interface name. The jackal machine uses `enp1s0`.
+
+If you set it to `auto`, CycloneDDS will pick an interface on its own — this can cause issues on machines with multiple interfaces (e.g. both a LAN and WiFi connection active), as it may not pick the one you intend.
+
 
 ### Host udev rules (one-time setup)
  
@@ -77,7 +98,6 @@ group membership — its USB access is handled by `group_add` in
 sudo usermod -aG plugdev,video,dialout $USER
 newgrp plugdev
 ```
-
 ---
 
 ## Common tasks
@@ -125,10 +145,8 @@ multisensor_docker/
 
 ### Why `src/` is bind-mounted
 
-So you can edit code in VS Code / Neovim / whatever on the host and have
-changes appear instantly in the container. The image does **not** contain
-any ROS packages — it contains only the SDK-level pieces (librealsense,
-Ximea SDK) plus apt-installed rosdep dependencies.
+So you can edit code in VS Code / whatever on the host and have
+changes appear instantly in the container. 
 
 ### Why build artifacts are bind-mounted
 
@@ -237,3 +255,26 @@ you connected with `ssh -Y` (or `-X`).
 
 **`docker compose` says it needs sudo.** Add yourself to the docker
 group (`sudo usermod -aG docker $USER`, then log out/in).
+
+**Nodes on different machines can't see each other / topics missing across machines.**
+Check these in order:
+1. All machines must have the same `ROS_DOMAIN_ID`. It is set in `.env` for this setup.
+2. Check if all the machines are on the same network interface (as pinned
+   in `config/cyclonedds.xml`). Run `ip link show` to verify the interface name.
+   A wrong interface name silently breaks discovery — CycloneDDS won't warn you.
+3. Run `ros2 multicast receive` on one machine and `ros2 multicast send` on
+   another to verify multicast is working across the network.
+
+**Messages are arriving but dropping frames / high latency on sensor topics.**
+The kernel buffer tuning hasn't been applied. Run:
+```bash
+./scripts/apply_on_reboot.sh
+```
+This is required after every reboot. The Ouster LiDAR and Ximea cameras in
+particular produce bursts that exceed default kernel buffer sizes.
+
+**QoS mismatch warnings or a topic visible in `ros2 topic list` but no data on `echo`.**
+Sensor drivers in this stack publish with `BEST_EFFORT` reliability. If your
+subscriber (or rviz2 fixed-frame) is set to `RELIABLE`, ROS 2 will silently
+drop the connection. Set your subscriber to `BEST_EFFORT` to match, or pass
+`--qos-reliability best_effort` to `ros2 topic echo`.
