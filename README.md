@@ -5,6 +5,8 @@ Dockerized ROS 2 Humble environment for the lab's sensor stack:
 - **Intel RealSense** (D4xx series) via custom-compiled RSUSB librealsense
 - **Ximea** USB3 industrial cameras
 - **FLIR Boson** thermal camera (V4L2)
+- **Ouster OS1** high-resolution, mid-range imaging LiDAR
+- **Xsens MTi-G** miniature AHRS with integrated GPS
 
 The image bakes in all SDK-level dependencies; ROS packages live in `src/`
 on your host and are bind-mounted into the container, so you edit code with

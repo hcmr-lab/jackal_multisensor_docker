@@ -20,6 +20,7 @@ sensor_ws/src/realsense-ros/
 sensor_ws/src/ximea*/
 sensor_ws/src/flir*/
 sensor_ws/src/ouster*/
+sensor_ws/src/*xsens*/
 
 # Editor / OS
 .vscode/

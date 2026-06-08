@@ -12,7 +12,7 @@ repositories:
     type: git
     url: https://github.com/hcmr-lab/ximea_ros2_cam.git
     version: main
-  flir_boson_usb:
+  flir_boson_usb2:
     type: git
     url: https://github.com/hcmr-lab/flir_boson_usb2.git
     version: main
@@ -20,6 +20,10 @@ repositories:
     type: git
     url: https://github.com/ouster-lidar/ouster-ros.git
     version: ros2
+  norlab_xsens_driver:
+    type: git
+    url: https://github.com/norlab-ulaval/norlab_xsens_driver.git
+    version: humble
 # ---------- Add your other sensor wrappers below ----------
 #  package_name:
 #    type: git
