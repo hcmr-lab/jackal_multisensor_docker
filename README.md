@@ -127,6 +127,7 @@ multisensor_docker/
 │   ├── setup.sh          # First-time onboarding (idempotent; detects host GIDs)
 │   ├── install-host-udev.sh  # One-time: extracts udev rules to host
 │   ├──_x11_setup.sh      # Sourced by shell.sh; injects X11 cookie into the container
+│   ├──apply_on_reboot.sh      # To kernel buffers for ROS messages and USB cameras
 │   └── shell.sh          # Open a shell in the container
 ├── config/
 │   └── cyclonedds.xml     # DDS tuning (mounted read-only into container)
