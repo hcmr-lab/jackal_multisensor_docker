@@ -58,7 +58,7 @@ services:
       - ./sensor_ws/log:/home/${USER_NAME:-ros2user}/ros2_ws/log
 
       # ---- Configs, calibrations, data ----
-      - ./config:/home/${USER_NAME:-ros2user}/config:ro
+      - ./config:/home/${USER_NAME:-ros2user}/config
       - ./calibrations:/home/${USER_NAME:-ros2user}/calibrations
       - ./bags:/home/${USER_NAME:-ros2user}/bags
       - ./maps:/home/${USER_NAME:-ros2user}/maps

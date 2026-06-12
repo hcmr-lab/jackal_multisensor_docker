@@ -1,7 +1,8 @@
 import os
 from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription, TimerAction, LogInfo, DeclareLaunchArgument
-from launch.launch_description_sources import PythonLaunchDescriptionSource, XMLLaunchDescriptionSource
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch_xml.launch_description_sources import XMLLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch.conditions import IfCondition
 from ament_index_python.packages import get_package_share_directory
@@ -15,9 +16,6 @@ def generate_launch_description():
         DeclareLaunchArgument('launch_ouster', default_value='true', description='Launch Ouster LiDAR'),
         DeclareLaunchArgument('launch_flir', default_value='true', description='Launch FLIR Boson thermal camera'),
         DeclareLaunchArgument('launch_xsens', default_value='true', description='Launch Xsens IMU'),
-        
-        # FLIR dynamic overrides
-        DeclareLaunchArgument('flir_dev', default_value='/dev/video0', description='FLIR video port'),
     ]
 
     launch_realsense = LaunchConfiguration('launch_realsense')
@@ -32,13 +30,17 @@ def generate_launch_description():
     # 2. Define the launches
     
     # Xsens IMU (Custom Wrapper)
-    xsens_launch = IncludeLaunchDescription(
+    xsens_include = IncludeLaunchDescription(
         XMLLaunchDescriptionSource(os.path.join(my_bringup_dir, 'launch', 'xsens.launch.xml')),
         launch_arguments={
             'initial_wait': '1.0',
-            #'device': '/dev/ttyUSB0',
-            #'baudrate': '115200',
-        }.items(),
+            'device': '/dev/ttyUSB0',   # Forces it to look here
+            'baudrate': '115200',       # Skips the baudrate sweeping scan
+        }.items()
+    )
+    xsens_launch = TimerAction(
+        period=8.0,  # Increased to outlast the RealSense USB reset
+        actions=[LogInfo(msg="Starting Xsens IMU..."), xsens_include],
         condition=IfCondition(launch_xsens)
     )
 
@@ -49,6 +51,8 @@ def generate_launch_description():
         launch_arguments={
             'sensor_hostname': 'os-122212000760.local',
             'timestamp_mode': 'TIME_FROM_ROS_TIME',
+            'viz': 'false',
+            'proc_mask': '"IMU|PCL"',
         }.items(),
         condition=IfCondition(launch_ouster)
     )
@@ -68,10 +72,11 @@ def generate_launch_description():
                 'enable_gyro': 'false',
                 'enable_accel': 'false',
                 
-                # 3. Explicitly configure your RGB stream
+                # Explicitly configure your low-CPU RGB stream
                 'enable_color': 'true',
-                'rgb_camera.color_profile': '640x480x30',
+                'rgb_camera.color_profile': '640x480x15',  # Changed to 15 FPS to optimize CPU
                 'rgb_camera.color_format': 'YUYV',
+                'publish_tf': 'false',
         }.items()
     )
     realsense_launch = TimerAction(
@@ -80,23 +85,28 @@ def generate_launch_description():
         condition=IfCondition(launch_realsense)
     )
 
-    # Ximea Camera (Custom Wrapper, 5s Delay)
+    # Ximea Camera (Custom Wrapper, 6s Delay)
     ximea_include = IncludeLaunchDescription(
         XMLLaunchDescriptionSource(os.path.join(my_bringup_dir, 'launch', 'ximea.launch.xml'))
     )
     ximea_cameras_launch = TimerAction(
-        period=5.0,
+        period=6.0,
         actions=[LogInfo(msg="Starting Ximea..."), ximea_include],
         condition=IfCondition(launch_ximea)
     )
 
-    # FLIR inclusion (Direct Call)
-    flir_launch = IncludeLaunchDescription(
+    # FLIR Camera
+    flir_include = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(my_bringup_dir, 'launch', 'flir.launch.py')),
         launch_arguments={
-            'video_mode': 'YUV',
-            'frame_rate': '30.0',
-        }.items(),
+            'flir_video_mode': 'YUV',
+            'flir_frame_rate': '30.0',
+        }.items()
+    )
+    
+    flir_launch = TimerAction(
+        period=10.0,
+        actions=[LogInfo(msg="Starting FLIR Boson..."), flir_include],
         condition=IfCondition(launch_flir)
     )
 
@@ -104,9 +114,9 @@ def generate_launch_description():
     return LaunchDescription(
         args + [
             LogInfo(msg="Starting Multisensor Bringup..."),
-            xsens_launch,
             ouster_launch,
             realsense_launch,
+            xsens_launch,
             flir_launch,
             ximea_cameras_launch
         ]

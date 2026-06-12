@@ -24,91 +24,58 @@ def get_flir_port():
 
 
 def generate_launch_description():
-    """Launch the FLIR Boson USB camera driver.
+    """Launch the FLIR Boson USB camera driver."""
 
-    To load a camera calibration, pass camera_info_url on the command line.
-    Common patterns:
-
-      # A calibration shipped with this package (for quick testing only,
-      # intrinsics are NOT guaranteed to match your physical camera):
-      camera_info_url:=package://flir_boson_usb2/example_calibrations/Boson640.yaml
-
-      # Your own calibration file on disk:
-      camera_info_url:=file:///home/user/calibrations/my_boson.yaml
-
-      # A calibration in another ROS package:
-      camera_info_url:=package://my_robot_calibrations/boson_front.yaml
-
-    Leave camera_info_url empty (the default) to publish uncalibrated
-    CameraInfo. Downstream nodes that require calibration will need it
-    set explicitly.
-    """
-
+    # --- PREFIXED TO PREVENT COLLISION ---
     namespace_arg = DeclareLaunchArgument(
-        'namespace', default_value='flir_boson',
+        'flir_namespace', default_value='flir_boson',
         description='The ROS namespace for the camera node'
     )
     frame_id_arg = DeclareLaunchArgument(
-        'frame_id', default_value='boson_camera',
+        'flir_frame_id', default_value='boson_camera',
         description='The TF frame ID stamped on each Image header'
     )
-    
-    # --- UPDATED: Now uses the auto-discovery function for the default value ---
     dev_arg = DeclareLaunchArgument(
-        'dev', default_value=get_flir_port(),
+        'flir_dev', default_value=get_flir_port(),
         description='The Linux video device path for the camera'
     )
-    # -------------------------------------------------------------------------
-    
     frame_rate_arg = DeclareLaunchArgument(
-        'frame_rate', default_value='30.0',
-        description='V4L2 polling rate in Hz. Any positive value is accepted; '
-                    'invalid values are clamped to 1.0 Hz. Typical Boson '
-                    'hardware rates are 9, 30, or 60.'
+        'flir_frame_rate', default_value='30.0',
+        description='V4L2 polling rate in Hz.'
     )
     video_mode_arg = DeclareLaunchArgument(
-        'video_mode', default_value='YUV',
-        description='YUV: hardware-AGC mono8/bgr8 from camera DSP (low CPU). '
-                    'RAW16: raw 16-bit thermal counts, published as mono16. '
-                    'RAW16_AGC: host-side percentile AGC, published as mono8.'
+        'flir_video_mode', default_value='YUV',
+        description='YUV, RAW16, or RAW16_AGC'
     )
     publish_color_arg = DeclareLaunchArgument(
-        'publish_color', default_value='False',
-        description='Publish 3-channel BGR colorized output instead of mono8 '
-                    '(YUV mode only)'
+        'flir_publish_color', default_value='False',
+        description='Publish 3-channel BGR colorized output instead of mono8'
     )
     raw16_agc_low_pct_arg = DeclareLaunchArgument(
-        'raw16_agc_low_pct', default_value='1.0',
-        description='Bottom-tail clip percentage for RAW16_AGC (e.g. 1.0 '
-                    'discards the darkest 1% of pixels). Valid range: [0, 50).'
+        'flir_raw16_agc_low_pct', default_value='1.0',
     )
     raw16_agc_high_pct_arg = DeclareLaunchArgument(
-        'raw16_agc_high_pct', default_value='1.0',
-        description='Top-tail clip percentage for RAW16_AGC (e.g. 1.0 '
-                    'discards the brightest 1% of pixels). Valid range: [0, 50).'
+        'flir_raw16_agc_high_pct', default_value='1.0',
     )
     camera_info_url_arg = DeclareLaunchArgument(
-        'camera_info_url', default_value='',
-        description='Camera calibration file URL (file:// or package://). '
-                    'Empty (default) publishes uncalibrated CameraInfo. See '
-                    'header docstring for examples.'
+        'flir_camera_info_url', default_value='',
     )
 
     boson_camera_node = Node(
         package='flir_boson_usb2',
         executable='boson_camera_node',
         name='flir_boson_usb_node',
-        namespace=LaunchConfiguration('namespace'),
+        namespace=LaunchConfiguration('flir_namespace'), # Updated
         output='screen',
         parameters=[{
-            'frame_id': LaunchConfiguration('frame_id'),
-            'dev': LaunchConfiguration('dev'),
-            'frame_rate': LaunchConfiguration('frame_rate'),
-            'video_mode': LaunchConfiguration('video_mode'),
-            'publish_color': LaunchConfiguration('publish_color'),
-            'raw16_agc_low_pct': LaunchConfiguration('raw16_agc_low_pct'),
-            'raw16_agc_high_pct': LaunchConfiguration('raw16_agc_high_pct'),
-            'camera_info_url': LaunchConfiguration('camera_info_url'),
+            'frame_id': LaunchConfiguration('flir_frame_id'),
+            'dev': LaunchConfiguration('flir_dev'),                 # Updated
+            'frame_rate': LaunchConfiguration('flir_frame_rate'),   # Updated
+            'video_mode': LaunchConfiguration('flir_video_mode'),   # Updated
+            'publish_color': LaunchConfiguration('flir_publish_color'),
+            'raw16_agc_low_pct': LaunchConfiguration('flir_raw16_agc_low_pct'),
+            'raw16_agc_high_pct': LaunchConfiguration('flir_raw16_agc_high_pct'),
+            'camera_info_url': LaunchConfiguration('flir_camera_info_url'),
         }]
     )
 
