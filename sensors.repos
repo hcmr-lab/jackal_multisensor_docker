@@ -8,7 +8,7 @@ repositories:
   realsense-ros:
     type: git
     url: https://github.com/realsenseai/realsense-ros.git
-    version: ros2-master
+    version: 4.57.7
   ximea_ros2_cam:
     type: git
     url: https://github.com/hcmr-lab/ximea_ros2_cam.git
@@ -24,7 +24,7 @@ repositories:
     version: ros2
   norlab_xsens_driver:
     type: git
-    url: https://github.com/norlab-ulaval/norlab_xsens_driver.git
+    url: https://github.com/hcmr-lab/norlab_xsens_driver.git
     version: humble
 # ---------- Add your other sensor wrappers below ----------
 #  package_name:

@@ -52,7 +52,8 @@ def generate_launch_description():
             'sensor_hostname': 'os-122212000760.local',
             'timestamp_mode': 'TIME_FROM_ROS_TIME',
             'viz': 'false',
-            'proc_mask': '"IMU|PCL"',
+            #'proc_mask': '"IMU|PCL"',
+            'attempt_reconnect': 'true',
         }.items(),
         condition=IfCondition(launch_ouster)
     )

@@ -66,6 +66,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         ros-humble-camera-info-manager \
         ros-humble-camera-calibration-parsers \
         ros-humble-pointcloud-to-laserscan \
+        ros-humble-rosbag2-storage-mcap \
         # Build/dev toolchain (lab members write code in here)
         ament-cmake \
         build-essential \
