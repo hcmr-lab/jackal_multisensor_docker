@@ -1,0 +1,9 @@
+topics:
+  - topic: /tf
+    type: tf2_msgs/msg/TFMessage
+  - topic: /odometry/filtered
+    type: nav_msgs/msg/Odometry
+  - topic: /joint_states
+    type: sensor_msgs/msg/JointState
+  - topic: /imu/data
+    type: sensor_msgs/msg/Imu
