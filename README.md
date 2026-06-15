@@ -12,6 +12,8 @@ The image bakes in all SDK-level dependencies; ROS packages live in `src/`
 on your host and are bind-mounted into the container, so you edit code with
 your normal tools and rebuild inside.
 
+It has additional support for bridging jackal ROS1 using `ros1_bridge` insatlled in native ROS2 foxy.
+
 ## Prerequisites
 
 - Linux host (Ubuntu 20.04 tested)
@@ -30,6 +32,7 @@ your normal tools and rebuild inside.
     sudo systemctl start avahi-daemon
     sudo systemctl enable avahi-daemon  # auto-start on reboot
   ```
+- If you want to use the ros1_bridge, you need ROS1 noetic and ROS2 foxy installed in the PC.
 
 ## Quick start
 
@@ -42,6 +45,9 @@ chmod +x scripts/*.sh
 
 # After each system reboot
 ./scripts/apply_on_reboot.sh   # sets kernel buffers for LiDAR/USB cameras
+
+# Launch sensors (Make sure you have done the first time settings for networking and udev rules)
+ros2 launch multisensor_bringup multisensor.launch.py
 ```
 ### Networking setting
 **1. ROS Domain ID**
@@ -127,10 +133,14 @@ multisensor_docker/
 │   ├── setup.sh          # First-time onboarding (idempotent; detects host GIDs)
 │   ├── install-host-udev.sh  # One-time: extracts udev rules to host
 │   ├──_x11_setup.sh      # Sourced by shell.sh; injects X11 cookie into the container
-│   ├──apply_on_reboot.sh      # To kernel buffers for ROS messages and USB cameras
-│   └── shell.sh          # Open a shell in the container
+│   ├── apply_on_reboot.sh      # To kernel buffers for ROS messages and USB cameras
+│   ├── shell.sh          # Open a shell in the container
+│   └── start_bridge.sh          # Starts Ros1_bridge
 ├── config/
-│   └── cyclonedds.xml     # DDS tuning (mounted read-only into container)
+│   ├── cyclonedds.xml     # DDS tuning (mounted read-only into container)
+│   ├── cyclonedds_foxy.xml     # DDS tuning for ros1_bridge
+│   ├── brdige_topics.yaml      # Topics to bridge from ROS1
+│   └── rviz2_sensors.rviz      # Rviz2 config for the sensors
 ├── sensors.repos          # vcstool manifest of sensor wrapper packages            
 ├── sensor_ws/
 │   ├── src/               # ROS 2 packages (your code + vcs-imported wrappers)
@@ -209,6 +219,15 @@ folder, hit "Reopen in Container", and you get the full workspace with
 ROS extensions, clangd, Python tooling, and a terminal already inside the
 container.
 
+## Ros1_bridge
+The `ros1_bridge` (specifically the `parameter_bridge`) acts as a selective relay on the Main PC. The topics for the parameter bridge are defined in `config/bridge_topics.yaml`.
+
+Note: It uses a differnt config in `config/cyclonedds_foxy.xml` to meet foxy requirements. You would have to set the same network interface in it as the one used in `config/cyclonedds.xml`.
+
+To start the bridge:
+```bash
+./scripts/start_bridge.sh
+```
 
 ## Troubleshooting
 
