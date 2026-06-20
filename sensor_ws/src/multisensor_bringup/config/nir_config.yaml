@@ -12,7 +12,7 @@
 
     # -------- Framerate Settings --------
     framerate_control: true
-    framerate_set: 30
+    framerate_set: 15
 
     # -------- Exposure Settings --------
     auto_exposure: true                    # Turn this ON
