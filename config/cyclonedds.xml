@@ -6,7 +6,7 @@
 
     <General>
       <Interfaces>
-        <NetworkInterface name="enp1s0" priority="default" multicast="default" />
+        <NetworkInterface name="lo" priority="default" multicast="default" />
         <!-- To let CycloneDDS pick automatically: <NetworkInterface name="auto" /> -->
       </Interfaces>
       <AllowMulticast>true</AllowMulticast>

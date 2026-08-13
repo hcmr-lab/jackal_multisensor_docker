@@ -1,0 +1,15 @@
+float64 time
+float64 acc_x
+float64 acc_y
+float64 acc_z
+float64 gyro_x
+float64 gyro_y
+float64 gyro_z
+float64 mag_x
+float64 mag_y
+float64 mag_z
+float64 temperature
+float64 q1
+float64 q2
+float64 q3
+float64 q4

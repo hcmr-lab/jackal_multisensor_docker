@@ -1,0 +1,29 @@
+================================
+obter o tópico da odometria:
+================================
+
+ssh pi@10.42.0.59
+
+password: raspberry
+
+rosrun robchair_driver robchair_driver 10.42.0.59
+
+
+
+================================
+Converter de bag para txt:
+================================
+
+
+rosbag record /odom
+
+(ctrl+c quando for para terminar a gravacao do tópico)
+
+copiar o nome do ficheiro .bag criado e colocar no ficheiro rebag4.cpp
+
+compilar "catkin_make"
+
+rosrun rosbageditor rebag4
+
+é criado um ficheiro .txt com o nome odom.
+

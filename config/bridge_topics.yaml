@@ -1,3 +1,4 @@
+# Use below topics for jackal
 topics:
   - topic: /tf
     type: tf2_msgs/msg/TFMessage
@@ -7,3 +8,13 @@ topics:
     type: sensor_msgs/msg/JointState
   - topic: /imu/data
     type: sensor_msgs/msg/Imu
+
+
+# Use the below for robotec platform
+# topics:
+#   - topic: /tf
+#     type: tf2_msgs/msg/TFMessage
+#   - topic: /cmd_vel
+#     type: geometry_msgs/msg/Twist
+#   - topic: /odom
+#     type: nav_msgs/msg/Odometry

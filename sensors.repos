@@ -26,6 +26,14 @@ repositories:
     type: git
     url: https://github.com/hcmr-lab/norlab_xsens_driver.git
     version: humble
+  xsens_mti_ros2:
+    type: git
+    url: https://github.com/xsenssupport/Xsens_MTi_ROS_Driver_and_Ntrip_Client.git
+    version: ros2
+  unilidar_sdk:
+    type: git
+    url: https://github.com/unitreerobotics/unilidar_sdk.git
+    version: main
 # ---------- Add your other sensor wrappers below ----------
 #  package_name:
 #    type: git
