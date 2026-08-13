@@ -52,7 +52,7 @@ def generate_launch_description():
             'sensor_hostname': 'os-122212000760.local',
             'timestamp_mode': 'TIME_FROM_ROS_TIME',
             'viz': 'false',
-            #'proc_mask': '"IMU|PCL"',
+            'proc_mask': '"IMU|PCL"',
             'attempt_reconnect': 'true',
         }.items(),
         condition=IfCondition(launch_ouster)
@@ -101,7 +101,7 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(os.path.join(my_bringup_dir, 'launch', 'flir.launch.py')),
         launch_arguments={
             'flir_video_mode': 'YUV',
-            'flir_frame_rate': '30.0',
+            'flir_frame_rate': '15.0',
         }.items()
     )
     
