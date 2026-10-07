@@ -125,25 +125,17 @@ RUN if getent passwd ubuntu > /dev/null 2>&1; then userdel -r ubuntu; fi && \
 
 RUN rosdep init || true
 
-# ---------- 5. Entrypoint ----------
-COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+# ---------- 5. Entrypoint + shared shell setup ----------
+COPY docker/entrypoint.sh   /usr/local/bin/entrypoint.sh
+COPY docker/shell-setup.sh  /etc/ros2_shell_setup.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh && chmod 0644 /etc/ros2_shell_setup.sh
 
 # ---------- 6. Switch to user; set up shell ----------
 USER $USERNAME
 ENV HOME=/home/$USERNAME
 WORKDIR $HOME/ros2_ws
 
-RUN echo "source /opt/ros/humble/setup.bash"                                              >> $HOME/.bashrc && \
-    echo "if [ -f \$HOME/ros2_ws/install/local_setup.bash ]; then source \$HOME/ros2_ws/install/local_setup.bash; fi" >> $HOME/.bashrc && \
-    echo "source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash"              >> $HOME/.bashrc && \
-    echo "alias cb='colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release'" >> $HOME/.bashrc && \
-    echo "alias cbp='colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release --packages-select'" >> $HOME/.bashrc && \
-    echo ""                                                                                 >> $HOME/.bashrc && \
-    echo "# Safe rosdep wrapper — always protects the custom RSUSB librealsense build"    >> $HOME/.bashrc && \
-    echo "rosdep-safe-install() {"                                                        >> $HOME/.bashrc && \
-    echo "  rosdep install -i --from-path src --rosdistro humble --skip-keys='librealsense2' -y \"\$@\"" >> $HOME/.bashrc && \
-    echo "}"                                                                               >> $HOME/.bashrc
+RUN echo "source /etc/ros2_shell_setup.sh" >> $HOME/.bashrc
 
 RUN rosdep update --rosdistro=humble
 

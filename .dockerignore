@@ -1,8 +1,10 @@
+.env
 sensor_ws/build/
 sensor_ws/install/
 sensor_ws/log/
 bags/
 maps/
+calibrations/
 .git/
 .vscode/
 __pycache__/

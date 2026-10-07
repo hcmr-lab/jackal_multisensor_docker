@@ -6,21 +6,11 @@
 
     <General>
       <Interfaces>
-        <NetworkInterface name="lo" priority="default" multicast="default" />
+        <NetworkInterface name="enp1s0" priority="default" multicast="default" presence_required="false"/>
         <!-- To let CycloneDDS pick automatically: <NetworkInterface name="auto" /> -->
       </Interfaces>
       <AllowMulticast>true</AllowMulticast>
-      <MaxMessageSize>65500B</MaxMessageSize>
-      <FragmentSize>4000B</FragmentSize>
     </General>
-
-    <Internal>
-      <SocketReceiveBufferSize min="10MB"/>
-      <SocketSendBufferSize    min="10MB"/>
-      <Watermarks>
-        <WhcHigh>8MB</WhcHigh>
-      </Watermarks>
-    </Internal>
 
     <Tracing>
       <Verbosity>warning</Verbosity>

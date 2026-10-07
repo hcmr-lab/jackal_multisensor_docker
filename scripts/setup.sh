@@ -64,6 +64,10 @@ ROS_DOMAIN_ID=0
 RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 # Path is INSIDE the container; ./config is mounted to /home/${USER}/config
 CYCLONEDDS_URI=file:///home/${USER}/config/cyclonedds.xml
+
+# Colcon build parallel processes
+PARALLEL_WORKERS=2
+BUILD_JOBS=$(( $(nproc) > 2 ? $(nproc) - 2 : 1 ))
 EOF
 else
     echo "-> [1/5] .env exists, leaving alone."
@@ -122,10 +126,11 @@ done
 echo " ready."
 
 # ---- [5/5] Build workspace (colcon is incremental) -------------------------
-echo "-> [5/5] Building workspace (incremental)..."
+echo "-> [5/5] Building workspace (incremental; ${PARALLEL_WORKERS:-1} package(s) at a time, ${BUILD_JOBS:-2} job(s) each)..."
 ${DOCKER} exec -t -u "${USER_NAME}" "${CONTAINER_NAME}" bash -lc \
     "source /opt/ros/humble/setup.bash && \
      colcon build --symlink-install \
+        --parallel-workers ${PARALLEL_WORKERS:-1} \
         --cmake-args -DCMAKE_BUILD_TYPE=Release \
                      -Dlibrealsense2_DIR=/usr/local/lib/cmake/realsense2"
 

@@ -33,7 +33,7 @@ fi
 CONTAINER_NAME="${CONTAINER_NAME:-multisensor_container}"
 USER_NAME="${USER_NAME:-ros2user}"
 
-if [ -z "$(${DOCKER} ps -q -f name=${CONTAINER_NAME})" ]; then
+if [ -z "$(${DOCKER} ps -q -f name=^/${CONTAINER_NAME}$)" ]; then
     echo "-> Container not running, starting it..."
     ${COMPOSE} up -d
     until ${DOCKER} exec "${CONTAINER_NAME}" true > /dev/null 2>&1; do

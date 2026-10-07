@@ -5,10 +5,14 @@
 # bring-up but make builds non-reproducible.
 repositories:
   # last tested realsense-ros2 version: 6d87b071dcfef15f2a0407e1e78945256add70d0
+  # Pinned past the 4.57.7 tag -- the 4.57.7 tag itself caused RealSense
+  # issues on this hardware; this commit ("fix package.xml", tracked off
+  # ros2-master) is the one confirmed working.
   realsense-ros:
     type: git
     url: https://github.com/realsenseai/realsense-ros.git
-    version: 4.57.7
+    version: 5c2244ca5cd9867c9ee63769668891430f460dfd
+    # version: ros2-master
   ximea_ros2_cam:
     type: git
     url: https://github.com/hcmr-lab/ximea_ros2_cam.git

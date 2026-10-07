@@ -21,13 +21,18 @@ fi
 DOCKER="docker"
 COMPOSE="docker compose"
 
-# Get the image name from compose
+# Get the image name from compose. Let Compose resolve it (handles ${VAR}
+# interpolation correctly, unlike grep+eval on the raw YAML).
 set -a
 [ -f .env ] && source .env
 set +a
 
-IMAGE_NAME=$(grep -E '^\s+image:' docker-compose.yml | head -1 | awk '{print $2}')
-IMAGE_NAME=$(eval echo "$IMAGE_NAME")
+IMAGE_NAME=$(${COMPOSE} config --images multisensor 2>/dev/null | head -1)
+
+if [ -z "${IMAGE_NAME}" ]; then
+    echo "ERROR: could not resolve the 'multisensor' service image from docker-compose.yml."
+    exit 1
+fi
 
 # Check if image is built; if not, guide the user
 if ! ${DOCKER} image inspect "$IMAGE_NAME" > /dev/null 2>&1; then

@@ -15,10 +15,13 @@ if [[ $EUID -ne 0 ]]; then
     exec sudo "$0" "$@"
 fi
 
+# Only the _max ceiling is raised, not _default: this machine is shared, and
+# _default would raise the buffer size of every socket on it, not just
+# CycloneDDS's.
 sysctl -w net.core.rmem_max=33554432
-sysctl -w net.core.rmem_default=33554432
+#sysctl -w net.core.rmem_default=33554432
 sysctl -w net.core.wmem_max=33554432
-sysctl -w net.core.wmem_default=33554432
+#sysctl -w net.core.wmem_default=33554432
 sh -c 'echo 0 > /sys/module/usbcore/parameters/usbfs_memory_mb'
 
 echo "Kernel tuning applied (resets on next reboot)."

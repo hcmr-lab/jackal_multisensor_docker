@@ -23,6 +23,15 @@ services:
     stdin_open: true
     tty: true
 
+    # Allow DMA zero-copy and real-time thread priority for sensor drivers.
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      rtprio:
+        soft: 99
+        hard: 99
+
     user: "${USER_UID:-1000}:${USER_GID:-1000}"
     working_dir: /home/${USER_NAME:-ros2user}/ros2_ws
 
@@ -39,6 +48,9 @@ services:
       - QT_X11_NO_MITSHM=1
       # Used by some sensor SDKs (Ximea) to locate config under HOME
       - HOME=/home/${USER_NAME:-ros2user}
+      # Colcon build parallelism, used by the cb/cbp aliases and `make rebuild`
+      - MAKEFLAGS=-j${BUILD_JOBS:-2}
+      - PARALLEL_WORKERS=${PARALLEL_WORKERS:-2}
 
     volumes:
       # ---- Hardware ----

@@ -50,6 +50,7 @@ def generate_launch_description():
         XMLLaunchDescriptionSource(os.path.join(ouster_dir, 'launch', 'sensor.launch.xml')),
         launch_arguments={
             'sensor_hostname': 'os-122212000760.local',
+            'lidar_mode': '1024x10',
             'timestamp_mode': 'TIME_FROM_ROS_TIME',
             'viz': 'false',
             'proc_mask': '"IMU|PCL"',

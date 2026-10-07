@@ -55,13 +55,12 @@ Edit `ROS_DOMAIN_ID` in `.env`. All machines that need to communicate must use t
 
 **2. ROS Network Interface**
 This setup uses CycloneDDS (`rmw_cyclonedds_cpp`) with a custom config at
-`config/cyclonedds.xml` that pins the interface and tunes buffer sizes for
-high-bandwidth sensor data.
+`config/cyclonedds.xml` that pins the network interface.
 
 Edit the interface name in `config/cyclonedds.xml`:
   ```xml
     <Interfaces>
-        <NetworkInterface name="enp1s0" priority="default" multicast="default" />
+        <NetworkInterface name="enp1s0" priority="default" multicast="default" presence_required="false"/>
     </Interfaces>
   ```
 Run `ip link show` to find your interface name. The jackal machine uses `enp1s0`.
@@ -87,7 +86,7 @@ lsusb | grep RealSense
 Inside the container:
 
 ```bash
-cb                                          # alias for: colcon build --symlink-install
+cb                                          # alias for: colcon build --symlink-install --parallel-workers ${PARALLEL_WORKERS:-1}
 ros2 launch realsense2_camera rs_launch.py  # or your own launch file
 ```
 
@@ -127,7 +126,8 @@ newgrp plugdev
 multisensor_docker/
 ├── docker/
 │   ├── Dockerfile         # Two-stage: builder (librealsense) + runner
-│   └── entrypoint.sh      # Sources ROS + overlay + argcomplete
+│   ├── entrypoint.sh      # Sources ROS + overlay + argcomplete
+│   └── shell-setup.sh     # Interactive-shell setup: cb/cbp aliases, rosdep-safe-install
 ├── docker-compose.yml     # Hardware mounts, named volumes, env wiring
 ├── scripts/
 │   ├── setup.sh          # First-time onboarding (idempotent; detects host GIDs)
@@ -139,7 +139,7 @@ multisensor_docker/
 ├── config/
 │   ├── cyclonedds.xml     # DDS tuning (mounted read-only into container)
 │   ├── cyclonedds_foxy.xml     # DDS tuning for ros1_bridge
-│   ├── brdige_topics.yaml      # Topics to bridge from ROS1
+│   ├── bridge_topics.yaml      # Topics to bridge from ROS1
 │   └── rviz2_sensors.rviz      # Rviz2 config for the sensors
 ├── sensors.repos          # vcstool manifest of sensor wrapper packages            
 ├── sensor_ws/
@@ -206,6 +206,11 @@ Use this method if you are writing your own custom driver or testing a downloade
 - Your host UID/GID (so files created inside belong to you)
 - Detected group IDs for `plugdev`, `video`, `dialout` (so the container user 
   can access USB devices and serial ports)
+- `JACKAL_IP`/`PC_IP` for `start_bridge.sh`'s auto-detect, and
+  `ALLOW_LOCALHOST_FALLBACK` (off by default) — see the Ros1_bridge section
+- `PARALLEL_WORKERS`/`BUILD_JOBS`, controlling colcon's build parallelism
+  (via the `cb`/`cbp` aliases and `make rebuild`) — lower these if a build
+  on this machine runs out of memory
  
 **Don't commit `.env`.** If you move to a different machine with different group 
 assignments, just delete `.env` and re-run `scripts/setup.sh`.
@@ -228,6 +233,18 @@ To start the bridge:
 ```bash
 ./scripts/start_bridge.sh
 ```
+
+`start_bridge.sh` auto-detects the Jackal: it pings `JACKAL_IP`, waits for the
+ROS 1 master's port 11311 to come up, then runs `parameter_bridge` under a
+watchdog that restarts it if the network to the Jackal drops or the bridge
+crashes (also cleaning up any orphaned `parameter_bridge` process from a
+previous crashed run). `JACKAL_IP` and `PC_IP` can be overridden in `.env`.
+
+If the Jackal isn't reachable, the script retries every 5 seconds by default
+and never starts the bridge. For dev/testing without the physical robot
+attached, set `ALLOW_LOCALHOST_FALLBACK=true` in `.env` to route
+`ROS_MASTER_URI`/`ROS_IP` to a local ROS 1 master instead (the network-drop
+watchdog is skipped in this mode, since there's no physical link to lose).
 
 ## Troubleshooting
 

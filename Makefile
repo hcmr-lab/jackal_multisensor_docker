@@ -25,8 +25,8 @@ shell: ## Open a shell inside the running container
 build: ## Rebuild the Docker image (does NOT touch the colcon workspace)
 	@$(COMPOSE) up -d --build
 
-rebuild: ## Rebuild the colcon workspace inside the container (with Release optimizations)
-	@$(COMPOSE) exec multisensor /usr/local/bin/entrypoint.sh colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
+rebuild: ## Rebuild the colcon workspace inside the container (respects PARALLEL_WORKERS/BUILD_JOBS from .env)
+	@$(COMPOSE) exec multisensor /usr/local/bin/entrypoint.sh bash -lc 'colcon build --symlink-install --parallel-workers "${PARALLEL_WORKERS:-1}" --cmake-args -DCMAKE_BUILD_TYPE=Release -Dlibrealsense2_DIR=/usr/local/lib/cmake/realsense2'
 
 logs: ## Tail container logs
 	@$(COMPOSE) logs -f
