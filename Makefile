@@ -13,8 +13,9 @@ help: ## Show this help
 setup: ## First-time setup (generates .env, imports src, builds image, builds workspace)
 	@./scripts/setup.sh
 
-up: ## Start the container in the background
+up: ## Start the container in the background, then wait for the Ouster's mDNS name
 	@$(COMPOSE) up -d
+	@./scripts/wait_for_ouster.sh
 
 down: ## Stop and remove the container
 	@$(COMPOSE) down
