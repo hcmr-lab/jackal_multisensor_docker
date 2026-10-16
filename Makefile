@@ -29,8 +29,8 @@ bridge: ## Start the ros1_bridge on the host (needs Noetic + Foxy)
 stack: ## Kernel tuning + bridge + sensors, each in a detached tmux session
 	@./scripts/stack.sh up
 
-record: ## Start ros2 bag record in a detached tmux session (writes to ./bags)
-	@./scripts/stack.sh record
+record: ## Start ros2 bag record, detached. Optional: NAME=folder ARGS="extra args"
+	@./scripts/stack.sh record $(NAME) $(ARGS)
 
 stop-record: ## Stop only the recording (sensors and bridge keep running)
 	@./scripts/stack.sh stop record

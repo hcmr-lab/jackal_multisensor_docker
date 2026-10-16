@@ -3,7 +3,9 @@
 # Run the multisensor stack in detached tmux sessions.
 #
 #   ./scripts/stack.sh up         kernel tuning + container + bridge + sensors
-#   ./scripts/stack.sh record     start `ros2 bag record` in ~/bags (detached)
+#   ./scripts/stack.sh record [name] [args...]
+#                                 start `ros2 bag record` in ~/bags (detached); name becomes
+#                                 the bag folder (-o name), extra args go to ros2 bag record
 #   ./scripts/stack.sh status     show which sessions are running
 #   ./scripts/stack.sh attach <bridge|sensors|record>   (detach: Ctrl+b d)
 #   ./scripts/stack.sh stop [bridge|sensors|record|all] (default: all; Ctrl+C is
@@ -74,9 +76,14 @@ cmd_up() {
     echo "Next: 'make shell' to check in RViz, then '$0 record'."
 }
 
-cmd_record() {
+cmd_record() {  # [bag_name] [extra ros2 bag record args...]
+    local extra=""
+    if [ $# -gt 0 ] && [[ "$1" != -* ]]; then
+        extra=" -o $(printf '%q' "$1")"; shift
+    fi
+    [ $# -gt 0 ] && extra+=" $(printf '%q ' "$@")"
     ensure_container
-    start_in_container record "/home/${USER_NAME}/bags" "${RECORD_CMD}"
+    start_in_container record "/home/${USER_NAME}/bags" "${RECORD_CMD}${extra}"
 }
 
 cmd_status() {
@@ -127,9 +134,9 @@ cmd_stop() {
 
 case "${1:-}" in
     up)      cmd_up ;;
-    record)  cmd_record ;;
+    record)  shift; cmd_record "$@" ;;
     status)  cmd_status ;;
     attach)  shift; cmd_attach "$@" ;;
     stop)    shift; cmd_stop "$@" ;;
-    *)       sed -n '2,15p' "$0"; exit 1 ;;
+    *)       sed -n '2,17p' "$0"; exit 1 ;;
 esac

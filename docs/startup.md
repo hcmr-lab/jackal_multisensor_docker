@@ -9,7 +9,7 @@ Assumes [first-time setup](installation.md) is done.
 | Command            | What it does                                                              |
 |--------------------|---------------------------------------------------------------------------|
 | `make stack`       | Kernel tuning (asks for sudo), starts container, bridge and sensors       |
-| `make record`      | Starts `ros2 bag record` in `./bags`                                      |
+| `make record`      | Starts `ros2 bag record` in `./bags`. Optional: `NAME=folder` names the bag, `ARGS="..."` adds `ros2 bag record` options |
 | `make stop-record` | Stops only the recording; sensors and bridge keep running                 |
 | `make stop-stack`  | Stops recorder, sensors and bridge                                        |
 
@@ -24,7 +24,7 @@ Typical flow after a reboot:
 ```bash
 make stack        # sudo once, then container + bridge + sensors
 make shell        # separate shell: launch rviz2 and check everything looks right
-make record
+make record NAME=run_outdoor_01    # bag folder name is optional
 make stop-record
 make stop-stack
 ```
