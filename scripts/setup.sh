@@ -65,6 +65,10 @@ RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 # Path is INSIDE the container; ./config is mounted to /home/${USER}/config
 CYCLONEDDS_URI=file:///home/${USER}/config/cyclonedds.xml
 
+# Jackal networking (used by start_bridge.sh)
+JACKAL_IP=169.254.126.137
+PC_IP=169.254.179.150
+
 # Colcon build parallel processes
 PARALLEL_WORKERS=2
 BUILD_JOBS=$(( $(nproc) > 2 ? $(nproc) - 2 : 1 ))
@@ -137,5 +141,10 @@ ${DOCKER} exec -t -u "${USER_NAME}" "${CONTAINER_NAME}" bash -lc \
 echo "========================================================================"
 echo "  Setup complete."
 echo ""
-echo "  Drop into the container with:  ./scripts/shell.sh"
+echo "  Drop into the container with:  make shell"
+echo "  Bridge:                        make bridge   (host, needs Noetic+Foxy)"
+echo ""
+echo "  Sensors also need (one-time / per-boot):"
+echo "    ./scripts/install-host-udev.sh   # once per machine"
+echo "    ./scripts/apply_on_reboot.sh     # after each reboot"
 echo "========================================================================"
