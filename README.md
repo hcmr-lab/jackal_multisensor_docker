@@ -27,7 +27,7 @@ Check the interface name and `ROS_DOMAIN_ID` in [Networking](docs/networking.md)
 ```bash
 make stack         # kernel tuning (sudo) + container + ros1_bridge + sensors, all detached
 make shell         # extra shell inside the container, e.g. to check rviz2
-make record        # start a bag recording in ./bags (detached); NAME=my_run sets the folder name
+make record NAME=run_outdoor_01   # start a bag recording in ./bags/run_outdoor_01 (detached); NAME is optional
 make stop-record   # stop only the recording
 make stop-stack    # stop recorder, sensors and bridge (Ctrl+C / SIGINT, waits for clean exit)
 ```
