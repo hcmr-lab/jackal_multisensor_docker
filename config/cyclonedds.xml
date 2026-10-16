@@ -6,11 +6,17 @@
 
     <General>
       <Interfaces>
+        <!--<NetworkInterface name="enp2s0" priority="default" multicast="default" presence_required="false"/> -->
         <NetworkInterface name="enp1s0" priority="default" multicast="default" presence_required="false"/>
-        <!-- To let CycloneDDS pick automatically: <NetworkInterface name="auto" /> -->
       </Interfaces>
-      <AllowMulticast>true</AllowMulticast>
+      <!-- Multicast for discovery only. With "true", enp1s0 gets flooded and almost reaches NIC limit -->
+      <AllowMulticast>spdp</AllowMulticast>
     </General>
+
+    <Internal>
+      <SocketReceiveBufferSize min="10MB"/>
+      <SocketSendBufferSize    min="10MB"/>
+    </Internal>
 
     <Tracing>
       <Verbosity>warning</Verbosity>

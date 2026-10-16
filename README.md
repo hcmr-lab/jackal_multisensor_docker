@@ -67,6 +67,20 @@ Run `ip link show` to find your interface name. The jackal machine uses `enp1s0`
 
 If you set it to `auto`, CycloneDDS will pick an interface on its own — this can cause issues on machines with multiple interfaces (e.g. both a LAN and WiFi connection active), as it may not pick the one you intend.
 
+**3. Multicast and socket buffers**
+`config/cyclonedds.xml` also sets:
+  ```xml
+    <AllowMulticast>spdp</AllowMulticast>
+    ...
+    <Internal>
+      <SocketReceiveBufferSize min="10MB"/>
+      <SocketSendBufferSize    min="10MB"/>
+    </Internal>
+  ```
+- `AllowMulticast` is `spdp`, so multicast is used for discovery only and image data is sent as unicast. With `true`, large image topics (e.g. Ximea RGB) were multicast out of `enp1s0` once more than one reader was subscribed (for example `ros2 bag record` plus RViz). That floods the switch shared with the Ouster and the Jackal base, and the Ximea topics showed seconds of latency while recording.
+- The socket buffers are only honored up to the host's `net.core.rmem_max` / `wmem_max`, which `scripts/apply_on_reboot.sh` raises. Run that script after every reboot, otherwise the 10 MB request is capped.
+- If you change either setting, restart the container; CycloneDDS reads the file at startup.
+
 
 ### Host udev rules (one-time setup)
  
@@ -112,6 +126,7 @@ newgrp plugdev
 | First-time setup                  | `make setup`             |
 | Start container                   | `make up`                |
 | Open a shell                      | `make shell`             |
+| Start the ros1_bridge (host)      | `make bridge`            |
 | Stop container                    | `make down`              |
 | Rebuild the Docker image          | `make build`             |
 | Rebuild the colcon workspace      | `make rebuild`           |
@@ -137,7 +152,7 @@ multisensor_docker/
 │   ├── shell.sh          # Open a shell in the container
 │   └── start_bridge.sh          # Starts Ros1_bridge
 ├── config/
-│   ├── cyclonedds.xml     # DDS tuning (mounted read-only into container)
+│   ├── cyclonedds.xml     # DDS tuning (mounted read-write into container)
 │   ├── cyclonedds_foxy.xml     # DDS tuning for ros1_bridge
 │   ├── bridge_topics.yaml      # Topics to bridge from ROS1
 │   └── rviz2_sensors.rviz      # Rviz2 config for the sensors
@@ -229,9 +244,9 @@ The `ros1_bridge` (specifically the `parameter_bridge`) acts as a selective rela
 
 Note: It uses a differnt config in `config/cyclonedds_foxy.xml` to meet foxy requirements. You would have to set the same network interface in it as the one used in `config/cyclonedds.xml`.
 
-To start the bridge:
+To start the bridge (on the host, not in the container):
 ```bash
-./scripts/start_bridge.sh
+make bridge        # same as ./scripts/start_bridge.sh
 ```
 
 `start_bridge.sh` auto-detects the Jackal: it pings `JACKAL_IP`, waits for the

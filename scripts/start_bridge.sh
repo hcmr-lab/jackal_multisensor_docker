@@ -18,7 +18,7 @@ if [ -f "$PROJECT_ROOT/.env" ]; then
 fi
 
 # Fallback values if not in .env
-ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-7}
+ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
 
 # --- 3. Source ROS Distros ---
 # Note: ros1_bridge typically requires Noetic and Foxy on the host
