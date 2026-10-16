@@ -46,7 +46,7 @@ start_in_container() {  # name, workdir, command
     fi
     local log="logs/${name}_${TS}.log"
     tmux new-session -d -s "ms_${name}" \
-        "docker exec -it -w '${workdir}' -u '${USER_NAME}' '${CONTAINER_NAME}' bash -lc '${cmd//\'/\'\\\'\'}' 2>&1 | tee '${PROJECT_ROOT}/${log}'; echo; echo '[ms_${name}] exited -- press Enter to close'; read"
+        "docker exec -it -w '${workdir}' -u '${USER_NAME}' '${CONTAINER_NAME}' /usr/local/bin/entrypoint.sh bash -c '${cmd//\'/\'\\\'\'}' 2>&1 | tee '${PROJECT_ROOT}/${log}'; echo; echo '[ms_${name}] exited -- press Enter to close'; read"
     echo "-> started ms_${name}  (log: ${log})"
 }
 
