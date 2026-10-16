@@ -38,6 +38,22 @@ TS=$(date +%Y%m%d_%H%M%S)
 
 have_session() { tmux has-session -t "ms_$1" 2>/dev/null; }
 
+# After starting a session, wait a few seconds; if the process already exited,
+# show its last output, close the session and return non-zero.
+verify_started() {  # name, logfile (optional)
+    local name=$1 log=${2:-} i
+    for i in $(seq 1 "${START_CHECK_SECONDS:-5}"); do
+        sleep 1
+        if ! have_session "$name" || session_done "$name"; then
+            echo "ERROR: ms_${name} exited right after starting. Last output:" >&2
+            if [ -n "$log" ] && [ -f "$log" ]; then tail -n 15 "$log" >&2
+            else tmux capture-pane -p -t "ms_${name}" 2>/dev/null | grep -v '^$' | tail -n 15 >&2; fi
+            tmux kill-session -t "ms_${name}" 2>/dev/null || true
+            return 1
+        fi
+    done
+}
+
 # Run a command inside the container as the user, log to logs/, in a tmux session.
 start_in_container() {  # name, workdir, command
     local name=$1 workdir=$2 cmd=$3
@@ -48,6 +64,7 @@ start_in_container() {  # name, workdir, command
     tmux new-session -d -s "ms_${name}" \
         "docker exec -it -w '${workdir}' -u '${USER_NAME}' '${CONTAINER_NAME}' /usr/local/bin/entrypoint.sh bash -c '${cmd//\'/\'\\\'\'}' 2>&1 | tee '${PROJECT_ROOT}/${log}'; echo; echo '[ms_${name}] exited -- press Enter to close'; read"
     echo "-> started ms_${name}  (log: ${log})"
+    verify_started "$name" "${PROJECT_ROOT}/${log}"
 }
 
 ensure_container() {
@@ -70,6 +87,7 @@ cmd_up() {
         tmux new-session -d -s ms_bridge \
             "'${PROJECT_ROOT}/scripts/start_bridge.sh'; echo; echo '[ms_bridge] exited -- press Enter to close'; read"
         echo "-> started ms_bridge"
+        verify_started bridge
     fi
 
     start_in_container sensors "/home/${USER_NAME}" "${LAUNCH_CMD}"
@@ -79,6 +97,13 @@ cmd_up() {
 cmd_record() {  # [bag_name] [extra ros2 bag record args...]
     local extra=""
     if [ $# -gt 0 ] && [[ "$1" != -* ]]; then
+        if [ -e "bags/$1" ]; then
+            local n=2
+            while [ -e "bags/$1_$n" ]; do n=$((n+1)); done
+            echo "ERROR: bags/$1 already exists (ros2 bag record won't write into it)." >&2
+            echo "       Pick another name, e.g.: $0 record $1_$n" >&2
+            exit 1
+        fi
         extra=" -o $(printf '%q' "$1")"; shift
     fi
     [ $# -gt 0 ] && extra+=" $(printf '%q ' "$@")"
