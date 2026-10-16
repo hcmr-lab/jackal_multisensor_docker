@@ -30,6 +30,7 @@ make shell         # extra shell inside the container, e.g. to check rviz2
 make record NAME=run_outdoor_01   # start a bag recording in ./bags/run_outdoor_01 (detached); NAME is optional
 make stop-record   # stop only the recording
 make stop-stack    # stop recorder, sensors and bridge (Ctrl+C / SIGINT, waits for clean exit)
+./scripts/stack.sh attach (bridge/sensors/record)    # to attach to those tmux sessions
 ```
 
 Sessions are tmux sessions (`ms_bridge`, `ms_sensors`, `ms_record`); logs go to `logs/`.
