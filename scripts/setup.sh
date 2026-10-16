@@ -72,6 +72,10 @@ PC_IP=169.254.179.150
 # Colcon build parallel processes
 PARALLEL_WORKERS=2
 BUILD_JOBS=$(( $(nproc) > 2 ? $(nproc) - 2 : 1 ))
+
+# Commands run by scripts/stack.sh (`make stack` / `make record`) inside the container
+SENSORS_LAUNCH_CMD='ros2 launch multisensor_bringup multisensor.launch.py launch_realsense:=false'
+RECORD_CMD='ros2 bag record -s mcap -a -x ".*(compressed|theora).*" --max-bag-size 2147483648 --max-cache-size 209715200'
 EOF
 else
     echo "-> [1/5] .env exists, leaving alone."

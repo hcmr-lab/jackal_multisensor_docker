@@ -21,7 +21,6 @@ sensor_ws/src/ximea*/
 sensor_ws/src/flir*/
 sensor_ws/src/ouster*/
 sensor_ws/src/*xsens*/
-sensor_ws/src/*unilidar*/
 
 # Editor / OS
 .vscode/
@@ -33,3 +32,5 @@ sensor_ws/src/*unilidar*/
 # Python
 __pycache__/
 *.pyc
+# Runtime logs from scripts/stack.sh
+logs/

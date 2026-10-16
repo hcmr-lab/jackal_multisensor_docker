@@ -1,20 +1,21 @@
-# Use below topics for jackal
+# Topics relayed between the Jackal's ROS1 (Melodic, via the ROS master) and
+# the ROS2 Humble domain, by ros1_bridge parameter_bridge running under Foxy.
+#
 topics:
+  # ---- Jackal to ROS2 ----
   - topic: /tf
     type: tf2_msgs/msg/TFMessage
+    queue_size: 100
   - topic: /odometry/filtered
     type: nav_msgs/msg/Odometry
+    queue_size: 20
   - topic: /joint_states
     type: sensor_msgs/msg/JointState
-  - topic: /imu/data
-    type: sensor_msgs/msg/Imu
-
-
-# Use the below for robotec platform
-# topics:
-#   - topic: /tf
-#     type: tf2_msgs/msg/TFMessage
-#   - topic: /cmd_vel
-#     type: geometry_msgs/msg/Twist
-#   - topic: /odom
-#     type: nav_msgs/msg/Odometry
+    queue_size: 10
+  # ---- ROS2 to Jackal ----
+  # Nav2's cmd_vel is relayed to /nav2/cmd_vel inside the nav2 container;
+  # the bridge carries it back to ROS1 where the Jackal's cmd_vel relay +
+  # safety node feeds it into Twist_mux.
+  - topic: /nav2/cmd_vel
+    type: geometry_msgs/msg/Twist
+    queue_size: 10

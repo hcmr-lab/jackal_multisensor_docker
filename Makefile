@@ -5,7 +5,7 @@ SHELL := /bin/bash
 COMPOSE := docker compose
 .DEFAULT_GOAL := help
 
-.PHONY: help setup up down shell bridge build rebuild logs clean status
+.PHONY: help setup up down shell bridge stack record stop-stack stop-record build rebuild logs clean status
 
 help: ## Show this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -25,6 +25,18 @@ shell: ## Open a shell inside the running container
 
 bridge: ## Start the ros1_bridge on the host (needs Noetic + Foxy)
 	@./scripts/start_bridge.sh
+
+stack: ## Kernel tuning + bridge + sensors, each in a detached tmux session
+	@./scripts/stack.sh up
+
+record: ## Start ros2 bag record in a detached tmux session (writes to ./bags)
+	@./scripts/stack.sh record
+
+stop-record: ## Stop only the recording (sensors and bridge keep running)
+	@./scripts/stack.sh stop record
+
+stop-stack: ## Stop recorder, sensors and bridge cleanly
+	@./scripts/stack.sh stop
 
 build: ## Rebuild the Docker image (does NOT touch the colcon workspace)
 	@$(COMPOSE) up -d --build
