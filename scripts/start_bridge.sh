@@ -10,15 +10,9 @@ PROJECT_ROOT=$(dirname "$SCRIPT_DIR")
 CONFIG_DIR="$PROJECT_ROOT/config"
 
 # --- 2. Load Environment Variables ---
-if [ -f "$PROJECT_ROOT/.env" ]; then
-    echo "Loading configuration from .env..."
-    set -a
-    source "$PROJECT_ROOT/.env"
-    set +a
-fi
-
-# Fallback values if not in .env
-ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/load-runtime-env.sh"
+load_multisensor_runtime_env "${PROJECT_ROOT}"
 
 # --- 3. Source ROS Distros ---
 # Note: ros1_bridge typically requires Noetic and Foxy on the host

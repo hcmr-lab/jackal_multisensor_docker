@@ -4,6 +4,12 @@ Assumes [first-time setup](installation.md) is done.
 
 ## One-command stack (recommended)
 
+When this repository is controlled by a parent robot deployment, set
+`PHARMA_RUNTIME_ENV=/absolute/path/to/.env.runtime`. `scripts/stack.sh` and
+`scripts/start_bridge.sh` load the local `.env` first and the shared runtime
+file last, so ROS transport settings such as `ROS_DOMAIN_ID` cannot diverge.
+Standalone use remains supported with the local `.env` only.
+
 `scripts/stack.sh` (wrapped by `make`) runs each part in its own named **tmux** session, so nothing is tied to your terminal.
 
 | Command            | What it does                                                              |

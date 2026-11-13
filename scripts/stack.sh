@@ -21,12 +21,9 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 PROJECT_ROOT="$( dirname "${SCRIPT_DIR}" )"
 cd "${PROJECT_ROOT}"
 
-if [ -f .env ]; then
-    set -a
-    # shellcheck disable=SC1091
-    source .env
-    set +a
-fi
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/load-runtime-env.sh"
+load_multisensor_runtime_env "${PROJECT_ROOT}"
 CONTAINER_NAME="${CONTAINER_NAME:-multisensor_container}"
 USER_NAME="${USER_NAME:-ros2user}"
 
@@ -62,7 +59,7 @@ start_in_container() {  # name, workdir, command
     fi
     local log="logs/${name}_${TS}.log"
     tmux new-session -d -s "ms_${name}" \
-        "docker exec -it -w '${workdir}' -u '${USER_NAME}' '${CONTAINER_NAME}' /usr/local/bin/entrypoint.sh bash -c '${cmd//\'/\'\\\'\'}' 2>&1 | tee '${PROJECT_ROOT}/${log}'; echo; echo '[ms_${name}] exited -- press Enter to close'; read"
+        "docker exec -it -e ROS_DOMAIN_ID='${ROS_DOMAIN_ID}' -e RMW_IMPLEMENTATION='${RMW_IMPLEMENTATION:-rmw_cyclonedds_cpp}' -w '${workdir}' -u '${USER_NAME}' '${CONTAINER_NAME}' /usr/local/bin/entrypoint.sh bash -c '${cmd//\'/\'\\\'\'}' 2>&1 | tee '${PROJECT_ROOT}/${log}'; echo; echo '[ms_${name}] exited -- press Enter to close'; read"
     echo "-> started ms_${name}  (log: ${log})"
     verify_started "$name" "${PROJECT_ROOT}/${log}"
 }

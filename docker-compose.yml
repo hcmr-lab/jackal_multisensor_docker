@@ -42,7 +42,7 @@ services:
       - "${DIALOUT_GID:-20}"
 
     environment:
-      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:?set in .env or PHARMA_RUNTIME_ENV}
       - RMW_IMPLEMENTATION=${RMW_IMPLEMENTATION:-rmw_cyclonedds_cpp}
       - CYCLONEDDS_URI=${CYCLONEDDS_URI:-}
       - QT_X11_NO_MITSHM=1
