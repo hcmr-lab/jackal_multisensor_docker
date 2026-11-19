@@ -51,7 +51,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 ARG USERNAME=ros2user
 ARG USER_UID=1000
 ARG USER_GID=1000
-ARG XIMEA_URL=https://www.ximea.com/getattachment/281fd5c5-3335-4279-a494-f49c004f00c6/XIMEA_Linux_SP.tgz
+ARG XIMEA_URL=https://www.ximea.com/attachment/Linux-SP-Stable.tgz
 
 # ---------- 1. System packages (runtime + dev tools + ROS extras) ----------
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -93,6 +93,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         python3-rosdep \
         python3-vcstool \
         python3-pytest \
+        # for xsens driver
+        python3-transforms3d \
     && rm -rf /var/lib/apt/lists/*
 
 # ---------- 2. Pull in librealsense built in stage 1 ----------
@@ -147,10 +149,11 @@ RUN rosdep update --rosdistro=humble
 #
 # --skip-keys=librealsense2 prevents rosdep from apt-installing librealsense
 # and clobbering the custom RSUSB build we copied from stage 1.
+# --skip-keys=python-transforms3d-pip is to skip the package needed for xsens \
 COPY --chown=$USER_UID:$USER_GID sensor_ws/src ./src
 RUN sudo apt-get update && \
     rosdep install -i --from-path src --rosdistro humble \
-        --skip-keys="librealsense2" \
+        --skip-keys="librealsense2 python-transforms3d-pip" \
         -y --ignore-src && \
     sudo rm -rf /var/lib/apt/lists/* && \
     rm -rf ./src
